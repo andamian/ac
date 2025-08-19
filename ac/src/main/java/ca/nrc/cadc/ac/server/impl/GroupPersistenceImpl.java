@@ -115,7 +115,7 @@ public class GroupPersistenceImpl extends LdapGroupPersistence
     static
     {
         ARCHIVE_GROUP_OWNER = new User();
-        ARCHIVE_GROUP_OWNER.getIdentities().add(new HttpPrincipal(("cadcops")));
+        ARCHIVE_GROUP_OWNER.getIdentities().add(new HttpPrincipal(("ops")));
         ARCHIVE_GROUP_OWNER.personalDetails = new PersonalDetails("cadc", "ops");
     }
 
@@ -206,7 +206,7 @@ public class GroupPersistenceImpl extends LdapGroupPersistence
 
     @Override
     public Collection<Group> getGroups(Role role, String groupID)
-        throws TransientException, AccessControlException
+        throws TransientException, AccessControlException, UserNotFoundException, GroupNotFoundException
     {
         Collection<Group> groups = super.getGroups(role, groupID);
         for (Group g : groups)

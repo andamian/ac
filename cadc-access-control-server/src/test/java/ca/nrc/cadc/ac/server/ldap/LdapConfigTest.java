@@ -88,20 +88,25 @@ public class LdapConfigTest {
     }
 
     @Test
-    public void testLoadConfig1() {
+    public void testLoadCompleteConfig() {
         try {
             System.setProperty(PropertiesReader.class.getName() + ".dir", "src/test/config");
             System.setProperty("user.home", "src/test/config");
 
-            LdapConfig c = LdapConfig.loadLdapConfig("testConfig1.properties");
+            LdapConfig c = LdapConfig.loadLdapConfig("testCompleteConfig.properties");
             Assert.assertEquals(389, c.getReadOnlyPool().getPort());
             Assert.assertEquals(636, c.getReadWritePool().getPort());
-            Assert.assertEquals(636, c.getUnboundReadOnlyPool().getPort());
-            Assert.assertEquals("uid=testuser,ou=testorg,dc=test", c.getProxyUserDN());
-            Assert.assertEquals("usersDN", c.getUsersDN());
-            Assert.assertEquals("userRequestsDN", c.getUserRequestsDN());
-            Assert.assertEquals("groupsDN", c.getGroupsDN());
-            Assert.assertEquals("adminGroupsDN", c.getAdminGroupsDN());
+            Assert.assertEquals(1234, c.getUnboundReadOnlyPool().getPort()); // default
+            Assert.assertTrue(c.getReadOnlyPool().isSecure());
+            Assert.assertFalse(c.getReadWritePool().isSecure());
+            Assert.assertTrue(c.getUnboundReadOnlyPool().isSecure()); // default
+            Assert.assertEquals("cn=Directory Manager", c.getAdminDN());
+            Assert.assertEquals("pw-dm", c.getAdminPasswd());
+            Assert.assertEquals("webproxy", c.getProxyUser());
+            Assert.assertEquals("ou=Users,ou=testorg,dc=test", LdapConfig.AcUnit.USERS.getDN(c));
+            Assert.assertEquals("ou=UserRequests,ou=testorg,dc=test", LdapConfig.AcUnit.USER_REQUESTS.getDN(c));
+            Assert.assertEquals("ou=Groups,ou=testorg,dc=test", LdapConfig.AcUnit.GROUPS.getDN(c));
+            Assert.assertEquals("ou=AdminGroups,ou=testorg,dc=test", LdapConfig.AcUnit.ADMIN_GROUPS.getDN(c));
 
             Assert.assertEquals(Arrays.asList("server1", "server2", "server3"), c.getReadOnlyPool().getServers());
             Assert.assertEquals(3, c.getReadOnlyPool().getInitSize());
@@ -117,7 +122,18 @@ public class LdapConfigTest {
             Assert.assertEquals(30000, c.getReadWritePool().getMaxWait());
             Assert.assertEquals(false, c.getReadWritePool().getCreateIfNeeded());
 
+            Assert.assertEquals("cn=Directory Manager", c.getAdminDN());
+            Assert.assertEquals("pw-dm", c.getAdminPasswd());
+            Assert.assertEquals(1234, c.getDefaultPort());
+            Assert.assertEquals("dc=test", c.getDomainDN());
+            Assert.assertEquals("ou=testorg,dc=test", c.getOrganizationalUnitDN());
+            Assert.assertEquals("webproxy", c.getProxyUser());
+
             Assert.assertTrue("offline mode", c.getSystemState().equals(SystemState.ONLINE));
+
+            // test equality
+            Assert.assertEquals(c, LdapConfig.loadLdapConfig("testCompleteConfig.properties"));
+            Assert.assertFalse(c == LdapConfig.loadLdapConfig("testDefaultConfig.properties"));
         } catch (Throwable t) {
             log.error("Unexpected exception", t);
             Assert.fail("Unexpected exception: " + t.getMessage());
@@ -127,20 +143,23 @@ public class LdapConfigTest {
     }
 
     @Test
-    public void testLoadConfig2() {
+    public void testLoadDefaultConfig() {
         try {
             System.setProperty(PropertiesReader.class.getName() + ".dir", "src/test/config");
             System.setProperty("user.home", "src/test/config");
 
-            LdapConfig c = LdapConfig.loadLdapConfig("testConfig2.properties");
+            LdapConfig c = LdapConfig.loadLdapConfig("testDefaultConfig.properties");
             Assert.assertEquals(389, c.getReadOnlyPool().getPort());
-            Assert.assertEquals(636, c.getReadWritePool().getPort());
+            Assert.assertEquals(389, c.getReadWritePool().getPort());
             Assert.assertEquals(389, c.getUnboundReadOnlyPool().getPort());
-            Assert.assertEquals("uid=testuser,ou=testorg,dc=test", c.getProxyUserDN());
-            Assert.assertEquals("usersDN", c.getUsersDN());
-            Assert.assertEquals("userRequestsDN", c.getUserRequestsDN());
-            Assert.assertEquals("groupsDN", c.getGroupsDN());
-            Assert.assertEquals("adminGroupsDN", c.getAdminGroupsDN());
+            Assert.assertTrue(c.getReadOnlyPool().isSecure());
+            Assert.assertTrue(c.getReadWritePool().isSecure());
+            Assert.assertTrue(c.getUnboundReadOnlyPool().isSecure());
+            Assert.assertEquals("webproxy", c.getProxyUser());
+            Assert.assertEquals("ou=Users,dc=test", LdapConfig.AcUnit.USERS.getDN(c));
+            Assert.assertEquals("ou=UserRequests,dc=test", LdapConfig.AcUnit.USER_REQUESTS.getDN(c));
+            Assert.assertEquals("ou=Groups,dc=test", LdapConfig.AcUnit.GROUPS.getDN(c));
+            Assert.assertEquals("ou=AdminGroups,dc=test", LdapConfig.AcUnit.ADMIN_GROUPS.getDN(c));
 
             Assert.assertEquals(Arrays.asList("serverA", "serverB", "serverC"), c.getReadOnlyPool().getServers());
             Assert.assertEquals(0, c.getReadOnlyPool().getInitSize());
@@ -171,8 +190,8 @@ public class LdapConfigTest {
             System.setProperty(PropertiesReader.class.getName() + ".dir", "src/test/config");
             System.setProperty("user.home", "src/test/config");
 
-            LdapConfig c1 = LdapConfig.loadLdapConfig("testConfig1.properties");
-            LdapConfig c2 = LdapConfig.loadLdapConfig("testConfig1.properties");
+            LdapConfig c1 = LdapConfig.loadLdapConfig("testCompleteConfig.properties");
+            LdapConfig c2 = LdapConfig.loadLdapConfig("testCompleteConfig.properties");
             Assert.assertEquals(c1, c2);
         } catch (Throwable t) {
             log.error("Unexpected exception", t);
@@ -189,8 +208,8 @@ public class LdapConfigTest {
             System.setProperty(PropertiesReader.class.getName() + ".dir", "src/test/config");
             System.setProperty("user.home", "src/test/config");
 
-            LdapConfig c1 = LdapConfig.loadLdapConfig("testConfig2.properties");
-            LdapConfig c2 = LdapConfig.loadLdapConfig("testConfig2.properties");
+            LdapConfig c1 = LdapConfig.loadLdapConfig("testDefaultConfig.properties");
+            LdapConfig c2 = LdapConfig.loadLdapConfig("testDefaultConfig.properties");
             Assert.assertEquals(c1, c2);
         } catch (Throwable t) {
             log.error("Unexpected exception", t);
@@ -206,8 +225,8 @@ public class LdapConfigTest {
             System.setProperty(PropertiesReader.class.getName() + ".dir", "src/test/config");
             System.setProperty("user.home", "src/test/config");
 
-            LdapConfig c1 = LdapConfig.loadLdapConfig("testConfig1.properties");
-            LdapConfig c2 = LdapConfig.loadLdapConfig("testConfig2.properties");
+            LdapConfig c1 = LdapConfig.loadLdapConfig("testCompleteConfig.properties");
+            LdapConfig c2 = LdapConfig.loadLdapConfig("testDefaultConfig.properties");
             Assert.assertTrue(!c1.equals(c2));
         } catch (Throwable t) {
             log.error("Unexpected exception", t);

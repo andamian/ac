@@ -128,7 +128,7 @@ public class LdapConnectionPool {
                 if (!boundPool)
                     pool = createPool(config, poolConfig, poolName, null, null);
                 else
-                    pool = createPool(config, poolConfig, poolName, config.getAdminUserDN(), config.getAdminPasswd());
+                    pool = createPool(config, poolConfig, poolName, config.getAdminDN(), config.getAdminPasswd());
 
                 if (pool != null) {
                     logger.debug(poolName + " statistics after create:\n" + pool.getConnectionPoolStatistics());
@@ -240,7 +240,7 @@ public class LdapConnectionPool {
                 logger.debug("Binding pool as " + bindID);
                 bindRequest = new SimpleBindRequest(bindID, bindPW);
             } else {
-                logger.debug("Binding pool annonymously");
+                logger.debug("Binding pool anonymously");
                 bindRequest = new SimpleBindRequest();
             }
             LDAPConnectionPool connectionPool = new LDAPConnectionPool(

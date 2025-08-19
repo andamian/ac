@@ -71,6 +71,7 @@ package ca.nrc.cadc.ac.server.ldap;
 
 import ca.nrc.cadc.util.MultiValuedProperties;
 import ca.nrc.cadc.util.PropertiesReader;
+import ca.nrc.cadc.util.StringUtil;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ServiceConfigurationError;
@@ -96,18 +97,18 @@ public class LdapConfig {
     public static final String POOL_MAX_SIZE = "poolMaxSize";
     public static final String POOL_POLICY = "poolPolicy";
     public static final String POOL_PORT = "port";
+    public static final String POOL_SSL_PORT = "sslPort";
     public static final String MAX_WAIT = "maxWait";
     public static final String CREATE_IF_NEEDED = "createIfNeeded";
 
     public static final String DEFAULT_LDAP_PORT = "port";
+    public static final String DEFAULT_SSL_LDAP_PORT = "sslPort";
+    public static final String LDAP_SERVER_ADMIN_DN = "adminDN";
+    public static final String LDAP_SERVER_ADMIN_PASSWORD = "adminPassword";
     public static final String LDAP_SERVER_PROXY_USER = "proxyUser";
     public static final String LDAP_SERVER_PROXY_PASSWORD = "proxyPassword";
-    public static final String LDAP_USERS_DN = "usersDN";
-    public static final String LDAP_USER_REQUESTS_DN = "userRequestsDN";
-    public static final String LDAP_GROUPS_DN = "groupsDN";
-    public static final String LDAP_ADMIN_GROUPS_DN = "adminGroupsDN";
-
-    private final static int SECURE_PORT = 636;
+    public static final String LDAP_DOMAIN_DN = "domainDN";
+    public static final String LDAP_OU = "organizationalUnit";
 
     public enum PoolPolicy {
         roundRobin,
@@ -121,11 +122,35 @@ public class LdapConfig {
         OFFLINE
     }
 
+    // The organizational units used by AC. They are siblings.
+    public enum AcUnit {
+        USERS("Users"),
+        SPECIAL_USERS("SpecialUsers"),
+        USER_REQUESTS("UserRequests"),
+        GROUPS("Groups"),
+        ADMIN_GROUPS("AdminGroups");
+
+        private final String value;
+
+        AcUnit(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return this.value;
+        }
+
+        public String getDN(LdapConfig config) {
+            return config.getAcOrganizationUnitDN(this);
+        }
+    };
+
     public class LdapPool {
         private List<String> servers;
         private int initSize;
         private int maxSize;
         private int port;
+        private boolean sslPort = false;
         private PoolPolicy policy;
         private long maxWait;
         private boolean createIfNeeded;
@@ -151,7 +176,7 @@ public class LdapConfig {
         }
 
         public boolean isSecure() {
-            return getPort() == SECURE_PORT;
+            return sslPort;
         }
 
         public long getMaxWait() {
@@ -170,6 +195,7 @@ public class LdapConfig {
                 sb.append(" [" + server + "]");
             }
             sb.append(" port: " + port);
+            sb.append(" sslPort: " + sslPort);
             sb.append(" initSize: " + initSize);
             sb.append(" maxSize: " + maxSize);
             sb.append(" policy: " + policy);
@@ -186,6 +212,9 @@ public class LdapConfig {
             LdapPool l = (LdapPool) other;
 
             if (l.port != port)
+                return false;
+
+            if (l.sslPort != sslPort)
                 return false;
 
             if (!l.servers.equals(servers))
@@ -216,21 +245,32 @@ public class LdapConfig {
     private LdapPool readWritePool = new LdapPool();
     private LdapPool unboundReadOnlyPool = new LdapPool();
     private int defaultPort = -1;
-    private String usersDN;
-    private String userRequestsDN;
-    private String groupsDN;
-    private String adminGroupsDN;
-    private String proxyUserDN;
+    private boolean defaultSslPort = false;
+    private String domainDN;
+    private String organizationalUnit;
+    private String adminDN;
+    private String adminPasswd;
+    private String proxyUser;
     private String proxyPasswd;
     private SystemState systemState;
 
-    public String getProxyUserDN() {
-        return proxyUserDN;
+
+    public String getAdminDN() {
+        return adminDN;
+    }
+
+    public String getAdminPasswd() {
+        return adminPasswd;
+    }
+
+    public String getProxyUser() {
+        return proxyUser;
     }
 
     public String getProxyPasswd() {
         return proxyPasswd;
     }
+
 
     public static LdapConfig getLdapConfig() {
         return loadLdapConfig(CONFIG);
@@ -246,6 +286,12 @@ public class LdapConfig {
         }
 
         LdapConfig ldapConfig = new LdapConfig();
+        if (config.getFirstPropertyValue(LDAP_SERVER_ADMIN_DN) != null) {
+            ldapConfig.adminDN = getProperty(config, LDAP_SERVER_ADMIN_DN);
+        }
+        if (config.getFirstPropertyValue(LDAP_SERVER_ADMIN_PASSWORD) != null) {
+            ldapConfig.adminPasswd = getProperty(config, LDAP_SERVER_ADMIN_PASSWORD);
+        }
 
         loadPoolConfig(ldapConfig.readOnlyPool, config, READONLY_PREFIX);
         loadPoolConfig(ldapConfig.readWritePool, config, READWRITE_PREFIX);
@@ -255,12 +301,15 @@ public class LdapConfig {
         if (defaultPort != null) {
             ldapConfig.defaultPort = Integer.parseInt(defaultPort);
         }
-        ldapConfig.proxyUserDN = getProperty(config, LDAP_SERVER_PROXY_USER);
+        ldapConfig.defaultSslPort = getProperty(config, DEFAULT_SSL_LDAP_PORT).trim().equalsIgnoreCase("true");
+        ldapConfig.proxyUser = getProperty(config, LDAP_SERVER_PROXY_USER);
         ldapConfig.proxyPasswd = getProperty(config, LDAP_SERVER_PROXY_PASSWORD);
-        ldapConfig.usersDN = getProperty(config, LDAP_USERS_DN);
-        ldapConfig.userRequestsDN = getProperty(config, LDAP_USER_REQUESTS_DN);
-        ldapConfig.groupsDN = getProperty(config, LDAP_GROUPS_DN);
-        ldapConfig.adminGroupsDN = getProperty(config, LDAP_ADMIN_GROUPS_DN);
+        ldapConfig.domainDN = getProperty(config, LDAP_DOMAIN_DN);
+        if (config.getFirstPropertyValue(LDAP_OU) != null) {
+            ldapConfig.organizationalUnit = config.getFirstPropertyValue(LDAP_OU);
+        } else {
+            ldapConfig.organizationalUnit = "";
+        }
 
         ldapConfig.systemState = getSystemState(ldapConfig);
 
@@ -276,17 +325,25 @@ public class LdapConfig {
         // Set the port to use for this pool's servers.  Default to the parent port config so that the isSecure()
         // method still works.  Throw an Exception if no port found.
         String port = pr.getFirstPropertyValue(prefix + POOL_PORT);
-        if (port != null) {
-            pool.port = Integer.parseInt(port);
-        } else {
+        if (port == null) {
             port = pr.getFirstPropertyValue(DEFAULT_LDAP_PORT);
             if (port == null) {
                 throw new ServiceConfigurationError("No port specified for " + prefix
                         + " and no default port specified at " + DEFAULT_LDAP_PORT);
-            } else {
-                pool.port = Integer.parseInt(port);
             }
         }
+        pool.port = Integer.parseInt(port);
+
+        String sslPort = pr.getFirstPropertyValue(prefix + POOL_SSL_PORT);
+        if (sslPort == null) {
+            sslPort = pr.getFirstPropertyValue(DEFAULT_SSL_LDAP_PORT);
+            if (sslPort == null) {
+                throw new ServiceConfigurationError("No sslPort type specified for " + prefix
+                        + " and no default sslPort type specified at " + DEFAULT_SSL_LDAP_PORT);
+            }
+        }
+        pool.sslPort = sslPort.trim().equalsIgnoreCase("true");
+
         if (pool.policy == PoolPolicy.fastestConnect && !prefix.equals(READONLY_PREFIX)) {
             throw new ServiceConfigurationError(PoolPolicy.fastestConnect.toString() +
                     " pool policy cannot be applied to " +
@@ -307,7 +364,7 @@ public class LdapConfig {
     private static List<String> getMultiProperty(MultiValuedProperties properties, String key) {
         String prop = getProperty(properties, key);
 
-        if (prop.trim().equals("")) {
+        if (prop.trim().isEmpty()) {
             throw new RuntimeException("failed to read property " + key);
         }
 
@@ -342,19 +399,13 @@ public class LdapConfig {
         if (!(l.defaultPort == defaultPort))
             return false;
 
-        if (!(l.usersDN.equals(usersDN)))
+        if (!(l.domainDN.equals(domainDN)))
             return false;
 
-        if (!(l.userRequestsDN.equals(userRequestsDN)))
+        if (!(l.organizationalUnit.equals(organizationalUnit)))
             return false;
 
-        if (!(l.groupsDN.equals(groupsDN)))
-            return false;
-
-        if (!(l.adminGroupsDN.equals(adminGroupsDN)))
-            return false;
-
-        if (!(l.proxyUserDN.equals(proxyUserDN)))
+        if (!(l.proxyUser.equals(proxyUser)))
             return false;
 
         if (!(l.readOnlyPool.equals(readOnlyPool)))
@@ -388,28 +439,20 @@ public class LdapConfig {
         return defaultPort;
     }
 
-    public String getUsersDN() {
-        return this.usersDN;
+    public String getDomainDN() {
+        return domainDN;
     }
 
-    public String getUserRequestsDN() {
-        return this.userRequestsDN;
+    public String getOrganizationalUnit() {
+        return this.organizationalUnit;
     }
 
-    public String getGroupsDN() {
-        return this.groupsDN;
+    public String getOrganizationalUnitDN() {
+        return StringUtil.hasText(organizationalUnit) ? "ou=" + organizationalUnit + "," + domainDN : domainDN;
     }
 
-    public String getAdminGroupsDN() {
-        return this.adminGroupsDN;
-    }
-
-    public String getAdminUserDN() {
-        return this.proxyUserDN;
-    }
-
-    public String getAdminPasswd() {
-        return this.proxyPasswd;
+    private String getAcOrganizationUnitDN(AcUnit ou) {
+        return this.domainDN == null ? null : "ou=" + ou.getValue() + "," + getOrganizationalUnitDN();
     }
 
     /**
@@ -427,8 +470,10 @@ public class LdapConfig {
         sb.append(" ReadOnlyPool: [" + readOnlyPool + "]");
         sb.append(" ReadWritePool: [" + readWritePool + "]");
         sb.append(" UnboundReadOnlyPool: [" + unboundReadOnlyPool + "]");
+        sb.append(" Admin User DN: " + adminDN);
         sb.append(" Default Port: " + defaultPort);
-        sb.append(" proxyUserDN: " + proxyUserDN);
+        sb.append(" Default SSL Port: " + defaultSslPort);
+        sb.append(" proxyUser: " + proxyUser);
 
         return sb.toString();
     }

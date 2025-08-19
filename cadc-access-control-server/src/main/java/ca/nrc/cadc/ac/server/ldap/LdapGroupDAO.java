@@ -455,7 +455,7 @@ public class LdapGroupDAO extends LdapDAO {
                         public void searchReferenceReturned(SearchResultReference srr) {
                             throw new UnsupportedOperationException("Not supported yet.");
                         }
-                    }, config.getGroupsDN(), SearchScope.ONE, filter, PUB_GROUP_ATTRS);
+                    }, LdapConfig.AcUnit.GROUPS.getDN(config), SearchScope.ONE, filter, PUB_GROUP_ATTRS);
 
             SearchResult searchResult = null;
             try {
@@ -493,9 +493,9 @@ public class LdapGroupDAO extends LdapDAO {
                     .getAttributeValues(LDAP_UNIQUE_MEMBER)) {
                 String userDN = null;
                 if (isPending) {
-                    userDN = config.getUserRequestsDN();
+                    userDN = LdapConfig.AcUnit.USER_REQUESTS.getDN(config);
                 } else {
-                    userDN = config.getUsersDN();
+                    userDN = LdapConfig.AcUnit.USERS.getDN(config);
                 }
 
                 DN memberDN = new DN(member);
@@ -512,7 +512,7 @@ public class LdapGroupDAO extends LdapDAO {
                         // ignore as we do not cleanup deleted users
                         // from groups they belong to
                     }
-                } else if (memberDN.isDescendantOf(config.getGroupsDN(), false)) {
+                } else if (memberDN.isDescendantOf(LdapConfig.AcUnit.GROUPS.getDN(config), false)){
                     try {
                         if (isPending) {
                             ldapGroup.getGroupMembers()
@@ -643,7 +643,7 @@ public class LdapGroupDAO extends LdapDAO {
             for (String member : searchEntry
                     .getAttributeValues(LDAP_UNIQUE_MEMBER)) {
                 String userDN = null;
-                userDN = config.getUserRequestsDN();
+                userDN = LdapConfig.AcUnit.USER_REQUESTS.getDN(config);
 
                 DN memberDN = new DN(member);
                 if (memberDN.isDescendantOf(userDN, false)) {
@@ -655,7 +655,7 @@ public class LdapGroupDAO extends LdapDAO {
                         // ignore as we do not cleanup deleted users
                         // from groups they belong to
                     }
-                } else if (memberDN.isDescendantOf(config.getGroupsDN(), false)) {
+                } else if (memberDN.isDescendantOf(LdapConfig.AcUnit.GROUPS.getDN(config), false)) {
                     try {
                         ldapGroup.getGroupMembers()
                                 .add(getUserAssociatedGroup(memberDN, null, PUB_GROUP_ATTRS, ldapConn));
@@ -695,7 +695,7 @@ public class LdapGroupDAO extends LdapDAO {
             filter = Filter.createANDFilter(filter,
                     Filter.createEqualityFilter(LDAP_GID_NUMBER, Integer.toString(gid)));
 
-            DN base = new DN(config.getGroupsDN());
+            DN base = new DN(LdapConfig.AcUnit.GROUPS.getDN(config));
             //SearchResultEntry searchEntry = searchForEntry(profiler, base, "gid=" + gid, filter, PUB_GROUP_ATTRS, ldapConn);
             SearchRequest searchRequest = new SearchRequest(base.toNormalizedString(), SearchScope.ONE, filter, PUB_GROUP_ATTRS);
             SearchResultEntry searchEntry = ldapConn.searchForEntry(searchRequest);
@@ -1058,7 +1058,7 @@ public class LdapGroupDAO extends LdapDAO {
             }
 
             SearchRequest searchRequest = new SearchRequest(
-                    config.getGroupsDN(), SearchScope.SUB, filter, GROUP_ATTRS);
+                    LdapConfig.AcUnit.GROUPS.getDN(config), SearchScope.SUB, filter, GROUP_ATTRS);
 
             LDAPConnection ldapROConn = getReadOnlyConnection();
             SearchResult results = getReadOnlyConnection().search(searchRequest);
@@ -1121,7 +1121,7 @@ public class LdapGroupDAO extends LdapDAO {
      */
     protected DN getGroupDN(final String groupID) throws TransientException {
         try {
-            return new DN("cn=" + groupID + "," + config.getGroupsDN());
+            return new DN("cn=" + groupID + "," + LdapConfig.AcUnit.GROUPS.getDN(config));
         } catch (LDAPException e) {
             logger.debug("getGroupDN Exception: " + e, e);
             LdapDAO.checkLdapResult(e.getResultCode());
@@ -1135,7 +1135,7 @@ public class LdapGroupDAO extends LdapDAO {
      */
     protected DN getAdminGroupDN(final String groupID) throws TransientException {
         try {
-            return new DN("cn=" + groupID + "," + config.getAdminGroupsDN());
+            return new DN("cn=" + groupID + "," + LdapConfig.AcUnit.ADMIN_GROUPS.getDN(config));
         } catch (LDAPException e) {
             logger.debug("getAdminGroupDN Exception: " + e, e);
             LdapDAO.checkLdapResult(e.getResultCode());

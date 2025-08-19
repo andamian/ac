@@ -171,10 +171,10 @@ public interface UserPersistence {
      * Get the user with the specified Principal with all of the users identities.
      *
      * @param userID          A Principal of the User.
-     * @param primeGroupCache optionally query for groups an cache GroupMembership
+     * @param primeGroupCache optionally query for groups a cache GroupMembership
      * @return User instance.
      * @throws UserNotFoundException  when the user is not found.
-     * @throws TransientException     If an temporary, unexpected problem occurred.
+     * @throws TransientException     If a temporary, unexpected problem occurred.
      * @throws AccessControlException If the operation is not permitted.
      */
     User getAugmentedUser(Principal userID, boolean primeGroupCache)

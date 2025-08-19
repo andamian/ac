@@ -140,7 +140,7 @@ public class LdapGroupDAOTest extends AbstractLdapDAOTest {
         final LdapUserDAO userDAO = getUserDAO();
         userDAO.addUserRequest(userRequest);
 
-        final DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + config.getUserRequestsDN());
+        final DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 

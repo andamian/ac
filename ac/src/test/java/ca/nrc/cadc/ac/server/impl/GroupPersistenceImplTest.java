@@ -124,6 +124,7 @@ public class GroupPersistenceImplTest
     public static void beforeClass() throws Exception
     {
         Log4jInit.setLevel("ca.nrc.cadc.ac", Level.INFO);
+        System.setProperty(PropertiesReader.CONFIG_DIR_SYSTEM_PROPERTY, "build/resources/test/config");
 
         File conf = FileUtil.getFileFromResource(GroupPersistenceImpl.CONFIG_FILE, GroupPersistenceImplTest.class);
 

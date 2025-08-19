@@ -233,7 +233,7 @@ public class LdapUserDAO extends LdapDAO {
             User user = getUser(httpPrincipal);
             long uuid = uuid2long(user.getID().getUUID());
             BindRequest bindRequest = new SimpleBindRequest(
-                    getUserDN(uuid, config.getUsersDN()), new String(password));
+                    getUserDN(uuid, LdapConfig.AcUnit.USERS.getDN(config)), new String(password));
 
             LDAPConnection conn = this.getUnboundReadConnection();
             BindResult bindResult = conn.bind(bindRequest);
@@ -284,7 +284,7 @@ public class LdapUserDAO extends LdapDAO {
 
         // check current users
         for (Principal p : principals) {
-            checkUsers(p, null, config.getUsersDN());
+            checkUsers(p, null, LdapConfig.AcUnit.USERS.getDN(config));
         }
 
         try {
@@ -314,9 +314,9 @@ public class LdapUserDAO extends LdapDAO {
             }
 
             // use the same ldapConnection to add the user and subsequently get the same user
-            DN userDN = getUserDN(numericID, config.getUsersDN());
+            DN userDN = getUserDN(numericID, LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
             AddRequest addRequest = new AddRequest(userDN, attributes);
-            logger.debug("addUser: adding " + idForLogging.getName() + " to " + config.getUsersDN());
+            logger.debug("addUser: adding " + idForLogging.getName() + " to " + LdapConfig.AcUnit.USERS.getDN(config));
             LDAPConnection ldapRWConn = getReadWriteConnection();
             LDAPResult result = ldapRWConn.add(addRequest);
             LdapDAO.checkLdapResult(result.getResultCode());
@@ -388,10 +388,10 @@ public class LdapUserDAO extends LdapDAO {
         String email = getEmailAddress(user);
 
         // check current users
-        checkUsers(userID, email, config.getUsersDN());
+        checkUsers(userID, email, LdapConfig.AcUnit.USERS.getDN(config));
 
         // check user requests
-        checkUsers(userID, email, config.getUserRequestsDN());
+        checkUsers(userID, email, LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
 
         try {
             int numericID = this.genNextNumericId();
@@ -428,9 +428,10 @@ public class LdapUserDAO extends LdapDAO {
                 }
             }
 
-            DN userDN = getUserDN(numericID, config.getUserRequestsDN());
+            DN userDN = getUserDN(numericID, LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
             AddRequest addRequest = new AddRequest(userDN, attributes);
-            logger.debug("addUserRequest: adding " + userID.getName() + " to " + config.getUserRequestsDN());
+            logger.debug("addUserRequest: adding " + userID.getName() + " to " +
+                    LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
             LDAPConnection ldapRWConn = getReadWriteConnection();
             LDAPResult result = ldapRWConn.add(addRequest);
             LdapDAO.checkLdapResult(result.getResultCode());
@@ -454,7 +455,7 @@ public class LdapUserDAO extends LdapDAO {
     public User getUser(final Principal userID)
             throws UserNotFoundException, TransientException,
             AccessControlException {
-        return getUser(userID, config.getUsersDN());
+        return getUser(userID, LdapConfig.AcUnit.USERS.getDN(config));
     }
 
     /**
@@ -470,7 +471,7 @@ public class LdapUserDAO extends LdapDAO {
     public User getUser(final Principal userID, final LDAPConnection ldapConn)
             throws UserNotFoundException, TransientException,
             AccessControlException {
-        return getUser(userID, config.getUsersDN(), ldapConn, false);
+        return getUser(userID, LdapConfig.AcUnit.USERS.getDN(config), ldapConn, false);
     }
 
     /**
@@ -485,7 +486,7 @@ public class LdapUserDAO extends LdapDAO {
     public User getUserRequest(final Principal userID)
             throws UserNotFoundException, TransientException,
             AccessControlException {
-        return getUser(userID, config.getUserRequestsDN());
+        return getUser(userID, LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
     }
 
     /**
@@ -501,7 +502,7 @@ public class LdapUserDAO extends LdapDAO {
     public User getUserRequest(final Principal userID, final LDAPConnection ldapConn)
             throws UserNotFoundException, TransientException,
             AccessControlException {
-        return getUser(userID, config.getUserRequestsDN(), ldapConn, false);
+        return getUser(userID, LdapConfig.AcUnit.USER_REQUESTS.getDN(config), ldapConn, false);
     }
 
     /**
@@ -623,7 +624,7 @@ public class LdapUserDAO extends LdapDAO {
     // Returns users that are locked (disabled or marked deleted)
     public User getLockedUser(final Principal userID)
             throws UserNotFoundException, TransientException {
-        return getLockedUser(userID, config.getUsersDN());
+        return getLockedUser(userID, LdapConfig.AcUnit.USERS.getDN(config));
     }
 
     // Returns users that are locked (disabled or marked deleted)
@@ -752,7 +753,7 @@ public class LdapUserDAO extends LdapDAO {
      */
     public List<User> getUsersByEmailAddress(final String emailAddress)
             throws TransientException, AccessControlException {
-        return getUsersByEmailAddress(emailAddress, config.getUsersDN());
+        return getUsersByEmailAddress(emailAddress, LdapConfig.AcUnit.USERS.getDN(config));
     }
 
     /**
@@ -872,7 +873,7 @@ public class LdapUserDAO extends LdapDAO {
                 attrs[identityAttribs.length] = LDAP_MEMBEROF;
 
             }
-            String usersDN = config.getUsersDN();
+            String usersDN = LdapConfig.AcUnit.USERS.getDN(config);
             SearchRequest searchRequest = new SearchRequest(
                     usersDN, SearchScope.ONE, filter, attrs);
 
@@ -936,8 +937,8 @@ public class LdapUserDAO extends LdapDAO {
                 user.appData = gms; // add even if empty
                 String[] mems = userFromSearch.getAttributeValues(LDAP_MEMBEROF);
                 if (mems != null && mems.length > 0) {
-                    DN adminDN = new DN(config.getAdminGroupsDN());
-                    DN groupsDN = new DN(config.getGroupsDN());
+                    DN adminDN = new DN(LdapConfig.AcUnit.ADMIN_GROUPS.getDN(config));
+                    DN groupsDN = new DN(LdapConfig.AcUnit.GROUPS.getDN(config));
                     List<Group> memberOf = new ArrayList<Group>();
                     List<Group> adminOf = new ArrayList<Group>();
                     for (String m : mems) {
@@ -985,7 +986,7 @@ public class LdapUserDAO extends LdapDAO {
      */
     public Collection<User> getUsers()
             throws AccessControlException, TransientException {
-        return getUsers(config.getUsersDN());
+        return getUsers(LdapConfig.AcUnit.USERS.getDN(config));
     }
 
     /**
@@ -996,7 +997,7 @@ public class LdapUserDAO extends LdapDAO {
      */
     public Collection<User> getUserRequests()
             throws AccessControlException, TransientException {
-        return getUsers(config.getUserRequestsDN());
+        return getUsers(LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
     }
 
     public Collection<User> getUsers(final String usersDN)
@@ -1064,7 +1065,7 @@ public class LdapUserDAO extends LdapDAO {
 
         final SortedSet<String> emails = new TreeSet<>();
         final String[] attributes = new String[]{LDAP_EMAIL};
-        final SearchRequest searchRequest = new SearchRequest(config.getUsersDN(), SearchScope.ONE, filter, attributes);
+        final SearchRequest searchRequest = new SearchRequest(LdapConfig.AcUnit.USERS.getDN(config), SearchScope.ONE, filter, attributes);
 
         try {
             final SearchResult searchResult = getReadOnlyConnection().search(searchRequest);
@@ -1081,7 +1082,7 @@ public class LdapUserDAO extends LdapDAO {
             }
         }
         logger.debug("getDistinctEmailAddressesForAllUsers: found " + emails.size()
-                + " distinct emails in " + config.getUsersDN());
+                + " distinct emails in " + LdapConfig.AcUnit.USERS.getDN(config));
 
         return emails;
     }
@@ -1105,11 +1106,11 @@ public class LdapUserDAO extends LdapDAO {
             throw new RuntimeException("BUG: missing HttpPrincipal for " + userID.getName());
         }
         String uid = "uid=" + uuid2long(userRequest.getID().getUUID());
-        String dn = uid + "," + config.getUserRequestsDN();
+        String dn = uid + "," + LdapConfig.AcUnit.USER_REQUESTS.getDN(config);
 
         try {
             ModifyDNRequest modifyDNRequest =
-                    new ModifyDNRequest(dn, uid, true, config.getUsersDN());
+                    new ModifyDNRequest(dn, uid, true, LdapConfig.AcUnit.USERS.getDN(config));
 
             LdapDAO.checkLdapResult(ldapRWConn.modifyDN(modifyDNRequest).getResultCode());
         } catch (LDAPException e) {
@@ -1266,7 +1267,7 @@ public class LdapUserDAO extends LdapDAO {
     public void deleteUser(final Principal userID, boolean markDelete)
             throws UserNotFoundException, TransientException,
             AccessControlException {
-        deleteUser(userID, config.getUsersDN(), markDelete);
+        deleteUser(userID, LdapConfig.AcUnit.USERS.getDN(config), markDelete);
     }
 
     /**
@@ -1280,7 +1281,7 @@ public class LdapUserDAO extends LdapDAO {
     public void unlockUser(final Principal userID)
             throws UserNotFoundException, TransientException,
             AccessControlException {
-        unlockUser(userID, config.getUsersDN());
+        unlockUser(userID, LdapConfig.AcUnit.USERS.getDN(config));
     }
 
 
@@ -1295,7 +1296,7 @@ public class LdapUserDAO extends LdapDAO {
     public void deleteUserRequest(final Principal userID)
             throws UserNotFoundException, TransientException,
             AccessControlException {
-        deleteUser(userID, config.getUserRequestsDN(), false);
+        deleteUser(userID, LdapConfig.AcUnit.USER_REQUESTS.getDN(config), false);
     }
 
     private void deleteUser(final Principal userID, final String usersDN, boolean markDelete)
@@ -1387,9 +1388,9 @@ public class LdapUserDAO extends LdapDAO {
 
         String configUserDN = null;
         if (isPending) {
-            configUserDN = config.getUserRequestsDN();
+            configUserDN = LdapConfig.AcUnit.USER_REQUESTS.getDN(config);
         } else {
-            configUserDN = config.getUsersDN();
+            configUserDN = LdapConfig.AcUnit.USERS.getDN(config);
         }
 
         // DN can be formulated if it is the numeric id

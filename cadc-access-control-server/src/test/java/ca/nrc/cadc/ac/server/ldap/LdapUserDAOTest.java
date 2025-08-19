@@ -152,7 +152,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
         final User testUser = new User();
         testUser.getIdentities().add(userID);
 
-        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + config.getUsersDN());
+        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + LdapConfig.AcUnit.USERS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 
@@ -197,7 +197,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
         final LdapUserDAO userDAO = getUserDAO();
         userDAO.addUserRequest(userRequest);
 
-        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + config.getUserRequestsDN());
+        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 
@@ -416,7 +416,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
         final Subject subject = new Subject();
         subject.getPrincipals().add(httpPrincipal);
         subject.getPrincipals().add(x500Principal);
-        subject.getPrincipals().add(new DNPrincipal(username + "," + config.getUsersDN()));
+        subject.getPrincipals().add(new DNPrincipal(username + "," + LdapConfig.AcUnit.USERS.getDN(config)));
 
         // do everything as owner
         Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
@@ -450,7 +450,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
 
         final UserRequest userRequest = new UserRequest(expected, "123456".toCharArray());
 
-        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + config.getUsersDN());
+        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + LdapConfig.AcUnit.USERS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 
@@ -563,7 +563,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
 
         final UserRequest userRequest = new UserRequest(testUser, "password".toCharArray());
 
-        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + userID + "," + config.getUsersDN());
+        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + userID + "," + LdapConfig.AcUnit.USERS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 
@@ -607,7 +607,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
         final LdapUserDAO userDAO = getUserDAO();
         userDAO.addUserRequest(userRequest);
 
-        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + userID + "," + config.getUserRequestsDN());
+        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + userID + "," + LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 
@@ -687,7 +687,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
 
         final UserRequest userRequest = new UserRequest(testUser, password.toCharArray());
 
-        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + config.getUsersDN());
+        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + LdapConfig.AcUnit.USERS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 
@@ -750,8 +750,8 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
         final X500Principal userID = new X500Principal("cn=" + username + ",ou=cadc,o=hia,c=ca");
         final HttpPrincipal testHttpPrincipal = new HttpPrincipal(username);
 
-        log.info("user DN: " + config.getUsersDN());
-        final DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + config.getUsersDN());
+        log.info("user DN: " + LdapConfig.AcUnit.USERS.getDN(config));
+        final DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + LdapConfig.AcUnit.USERS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 
@@ -777,7 +777,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
                 }
 
                 // Check to see if there are multiple users already existing.
-                List<User> userList = userDAO.getAllUsers(userID, config.getUsersDN());
+                List<User> userList = userDAO.getAllUsers(userID, LdapConfig.AcUnit.USERS.getDN(config));
 
                 if (userList.size() < 6) {
                     log.debug("Creating multiple users (5 more)");
@@ -792,7 +792,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
                     }
 
                     // Retrieve new list
-                    userList = userDAO.getAllUsers(userID, config.getUsersDN());
+                    userList = userDAO.getAllUsers(userID, LdapConfig.AcUnit.USERS.getDN(config));
                 }
 
                 User retrievedUser = userDAO.getUser(userID);
@@ -829,14 +829,14 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
 
             final X500Principal userID = new X500Principal("cn=" + username + ",ou=cadc,o=hia,c=ca");
 
-            List<User> userList = userDAO.getAllUsers(userID, config.getUsersDN());
+            List<User> userList = userDAO.getAllUsers(userID, LdapConfig.AcUnit.USERS.getDN(config));
 
             if (userList.size() < 2) {
 
                 final User testUser = new User();
                 testUser.getIdentities().add(userID);
 
-                DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + config.getUsersDN());
+                DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + LdapConfig.AcUnit.USERS.getDN(config));
                 Subject subject = new Subject();
                 subject.getPrincipals().add(dnPrincipal);
 
@@ -895,7 +895,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
         testUser.personalDetails = new PersonalDetails("firstName", "lastName");
 
         // add the user
-        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + config.getUsersDN());
+        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + username + "," + LdapConfig.AcUnit.USERS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(testUser.getHttpPrincipal());
         subject.getPrincipals().add(dnPrincipal);
@@ -1049,7 +1049,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
             throws Exception {
         final UserRequest userRequest = new UserRequest(user, "password".toCharArray());
 
-        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + userID.getName() + "," + config.getUsersDN());
+        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + userID.getName() + "," + LdapConfig.AcUnit.USERS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 
@@ -1069,7 +1069,7 @@ public class LdapUserDAOTest extends AbstractLdapDAOTest {
 
     private void deleteUser(final HttpPrincipal userID)
             throws Exception {
-        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + userID.getName() + "," + config.getUsersDN());
+        DNPrincipal dnPrincipal = new DNPrincipal("uid=" + userID.getName() + "," + LdapConfig.AcUnit.USERS.getDN(config));
         Subject subject = new Subject();
         subject.getPrincipals().add(dnPrincipal);
 

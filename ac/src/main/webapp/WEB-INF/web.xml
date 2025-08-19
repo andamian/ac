@@ -80,11 +80,15 @@
     <servlet-name>GroupMapServlet</servlet-name>
     <servlet-class>ca.nrc.cadc.rest.RestServlet</servlet-class>
     <init-param>
+        <param-name>init</param-name>
+        <param-value>ca.nrc.cadc.ac.server.ldap.LdapInitAction</param-value>
+    </init-param>
+    <init-param>
       <param-name>get</param-name>
       <param-value>ca.nrc.cadc.ac.server.GetGroupMapAction</param-value>
     </init-param>
     
-    <load-on-startup>3</load-on-startup>
+    <load-on-startup>2</load-on-startup>
   </servlet>
   
   <servlet>
@@ -392,7 +396,7 @@
         <servlet-class>ca.nrc.cadc.log.LogControlServlet</servlet-class>
         <init-param>
             <param-name>logLevel</param-name>
-            <param-value>info</param-value>
+            <param-value>debug</param-value>
         </init-param>
         <init-param>
             <param-name>logLevelPackages</param-name>

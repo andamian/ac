@@ -228,8 +228,8 @@ public class AbstractLdapDAOTest {
             testMember.getIdentities().add(cadcDaoTest1_HttpPrincipal);
 
             // entryDN
-            cadcDaoTest1_DN = "uid=cadcdaotest1," + config.getUsersDN();
-            cadcDaoTest2_DN = "uid=cadcdaotest2," + config.getUsersDN();
+            cadcDaoTest1_DN = "uid=cadcdaotest1," + LdapConfig.AcUnit.USER_REQUESTS.getDN(config);
+            cadcDaoTest2_DN = "uid=cadcdaotest2," + LdapConfig.AcUnit.USER_REQUESTS.getDN(config);
 
             cadcDaoTest1_DNPrincipal = new DNPrincipal(cadcDaoTest1_DN);
             cadcDaoTest2_DNPrincipal = new DNPrincipal(cadcDaoTest2_DN);
