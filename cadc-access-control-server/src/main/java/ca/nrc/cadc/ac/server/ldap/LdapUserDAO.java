@@ -277,7 +277,7 @@ public class LdapUserDAO extends LdapDAO {
         List<Attribute> attributes = new ArrayList<>();
         String idForLogging = null;
         for (Principal princ : principals) {
-            checkUsers(princ, null, config.getUsersDN()); // check identities not in used already
+            checkUsers(princ, null, LdapConfig.AcUnit.USERS.getDN(config)); // check identities not in used already
             if (princ instanceof OpenIdPrincipal) {
                 idForLogging = toLdapValue((OpenIdPrincipal)princ);
                 addAttribute(attributes, LDAP_OIDCID, idForLogging);
@@ -317,7 +317,7 @@ public class LdapUserDAO extends LdapDAO {
             // use the same ldapConnection to add the user and subsequently get the same user
             DN userDN = getUserDN(numericID, LdapConfig.AcUnit.USER_REQUESTS.getDN(config));
             AddRequest addRequest = new AddRequest(userDN, attributes);
-            logger.debug("addUser: adding " + idForLogging.getName() + " to " + LdapConfig.AcUnit.USERS.getDN(config));
+            logger.debug("addUser: adding " + idForLogging + " to " + LdapConfig.AcUnit.USERS.getDN(config));
             LDAPConnection ldapRWConn = getReadWriteConnection();
             LDAPResult result = ldapRWConn.add(addRequest);
             LdapDAO.checkLdapResult(result.getResultCode());

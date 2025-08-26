@@ -462,7 +462,7 @@ public class LdapConfig {
                 " ReadWritePool: [" + readWritePool + "]" +
                 " UnboundReadOnlyPool: [" + unboundReadOnlyPool + "]" +
                 " Default Port: " + defaultPort +
-                " proxyUserDN: " + proxyUserDN;
+                " proxyUser: " + proxyUser;
     }
 
 }
