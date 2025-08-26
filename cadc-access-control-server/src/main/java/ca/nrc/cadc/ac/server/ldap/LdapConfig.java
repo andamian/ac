@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2023.                            (c) 2023.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -192,21 +192,20 @@ public class LdapConfig {
             StringBuilder sb = new StringBuilder();
             sb.append(" Servers: ");
             for (String server : servers) {
-                sb.append(" [" + server + "]");
+                sb.append(" [").append(server).append("]");
             }
-            sb.append(" port: " + port);
-            sb.append(" sslPort: " + sslPort);
-            sb.append(" initSize: " + initSize);
-            sb.append(" maxSize: " + maxSize);
-            sb.append(" policy: " + policy);
-            sb.append(" maxWait: " + maxWait);
-            sb.append(" createIfNeeded: " + createIfNeeded);
+            sb.append(" port: ").append(port);
+            sb.append(" initSize: ").append(initSize);
+            sb.append(" maxSize: ").append(maxSize);
+            sb.append(" policy: ").append(policy);
+            sb.append(" maxWait: ").append(maxWait);
+            sb.append(" createIfNeeded: ").append(createIfNeeded);
             return sb.toString();
         }
 
         @Override
         public boolean equals(Object other) {
-            if (other == null || !(other instanceof LdapPool))
+            if (!(other instanceof LdapPool))
                 return false;
 
             LdapPool l = (LdapPool) other;
@@ -232,18 +231,13 @@ public class LdapConfig {
             if (!(l.maxWait == maxWait))
                 return false;
 
-            if (!(l.createIfNeeded == createIfNeeded))
-                return false;
-
-            return true;
+            return l.createIfNeeded == createIfNeeded;
         }
     }
 
-    ;
-
-    private LdapPool readOnlyPool = new LdapPool();
-    private LdapPool readWritePool = new LdapPool();
-    private LdapPool unboundReadOnlyPool = new LdapPool();
+    private final LdapPool readOnlyPool = new LdapPool();
+    private final LdapPool readWritePool = new LdapPool();
+    private final LdapPool unboundReadOnlyPool = new LdapPool();
     private int defaultPort = -1;
     private boolean defaultSslPort = false;
     private String domainDN;
@@ -345,7 +339,7 @@ public class LdapConfig {
         pool.sslPort = sslPort.trim().equalsIgnoreCase("true");
 
         if (pool.policy == PoolPolicy.fastestConnect && !prefix.equals(READONLY_PREFIX)) {
-            throw new ServiceConfigurationError(PoolPolicy.fastestConnect.toString() +
+            throw new ServiceConfigurationError(PoolPolicy.fastestConnect +
                     " pool policy cannot be applied to " +
                     prefix.substring(0, prefix.length() - 1) + " pool servers.");
         }
@@ -391,7 +385,7 @@ public class LdapConfig {
 
     @Override
     public boolean equals(Object other) {
-        if (other == null || !(other instanceof LdapConfig))
+        if (!(other instanceof LdapConfig))
             return false;
 
         LdapConfig l = (LdapConfig) other;
@@ -414,10 +408,7 @@ public class LdapConfig {
         if (!(l.readWritePool.equals(readWritePool)))
             return false;
 
-        if (!(l.unboundReadOnlyPool.equals(unboundReadOnlyPool)))
-            return false;
-
-        return true;
+        return l.unboundReadOnlyPool.equals(unboundReadOnlyPool);
     }
 
     private LdapConfig() {
@@ -466,16 +457,12 @@ public class LdapConfig {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(" ReadOnlyPool: [" + readOnlyPool + "]");
-        sb.append(" ReadWritePool: [" + readWritePool + "]");
-        sb.append(" UnboundReadOnlyPool: [" + unboundReadOnlyPool + "]");
-        sb.append(" Admin User DN: " + adminDN);
-        sb.append(" Default Port: " + defaultPort);
-        sb.append(" Default SSL Port: " + defaultSslPort);
-        sb.append(" proxyUser: " + proxyUser);
 
-        return sb.toString();
+        return " ReadOnlyPool: [" + readOnlyPool + "]" +
+                " ReadWritePool: [" + readWritePool + "]" +
+                " UnboundReadOnlyPool: [" + unboundReadOnlyPool + "]" +
+                " Default Port: " + defaultPort +
+                " proxyUserDN: " + proxyUserDN;
     }
 
 }
