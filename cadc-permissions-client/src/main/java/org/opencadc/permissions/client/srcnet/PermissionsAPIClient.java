@@ -68,9 +68,11 @@
 package org.opencadc.permissions.client.srcnet;
 
 import ca.nrc.cadc.net.FileContent;
+import ca.nrc.cadc.net.HttpConstants;
 import ca.nrc.cadc.net.HttpGet;
 import ca.nrc.cadc.net.HttpPost;
 import ca.nrc.cadc.net.NetUtil;
+import ca.nrc.cadc.net.PermissionDeniedException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -279,7 +281,10 @@ public class PermissionsAPIClient {
         }
     }
 
-    private static void assertArg(final String value, final String name) {
+    private static void assertArg(String value, final String name) {
+        if (value != null) {
+            value = value.trim();
+        }
         if (value == null || value.isEmpty()) {
             throw new IllegalArgumentException("invalid " + name + ": null or empty");
         }
@@ -290,9 +295,24 @@ public class PermissionsAPIClient {
         get.setRequestProperty("Accept", "application/json");
         try {
             get.prepare();
-        } catch (Throwable t) {
+        } catch (IllegalArgumentException ex) {
+            // ugh: 400 + msg when requesting a permission that does not exist
+            if ("application/json".equals(get.getResponseHeader(HttpConstants.HDR_CONTENT_TYPE))) {
+                JSONObject o = new JSONObject(new JSONTokener(ex.getMessage()));
+                String msg = o.getString("detail");
+                if (msg != null) {
+                    if (msg.contains("permission policy for this service does not exist")) {
+                        throw new PermissionDeniedException("permission denied: " + msg);
+                    }
+                    throw new IllegalArgumentException(msg);
+                }
+            }
+            throw ex;
+        } catch (PermissionDeniedException ex) {
+            throw ex;
+        } catch (Exception ex) {
             final int code = get.getResponseCode();
-            throw new IOException("HTTP transfer failed: " + code + ": " + t.getMessage(), t);
+            throw new RuntimeException("unexpected failure: HTTP transfer failed: " + code + ": " + ex.getMessage(), ex);
         }
         return new JSONObject(new JSONTokener(get.getInputStream()));
     }
@@ -304,9 +324,24 @@ public class PermissionsAPIClient {
         post.setRequestProperty("Accept", "application/json");
         try {
             post.prepare();
-        } catch (Throwable t) {
+        } catch (IllegalArgumentException ex) {
+            // ugh: 400 + msg when requesting a permission that does not exist
+            if ("application/json".equals(post.getResponseHeader(HttpConstants.HDR_CONTENT_TYPE))) {
+                JSONObject o = new JSONObject(new JSONTokener(ex.getMessage()));
+                String msg = o.getString("detail");
+                if (msg != null) {
+                    if (msg.contains("permission policy for this service does not exist")) {
+                        throw new PermissionDeniedException("permission denied: " + msg);
+                    }
+                    throw new IllegalArgumentException(msg);
+                }
+            }
+            throw ex;
+        } catch (PermissionDeniedException ex) {
+            throw ex;
+        } catch (Exception ex) {
             final int code = post.getResponseCode();
-            throw new IOException("HTTP transfer failed: " + code + ": " + t.getMessage(), t);
+            throw new RuntimeException("unexpected failure: HTTP transfer failed: " + code + ": " + ex.getMessage(), ex);
         }
 
         return new JSONObject(new JSONTokener(post.getInputStream()));
