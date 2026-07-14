@@ -89,6 +89,7 @@ public final class PosixProvisioner {
     }
 
     public static void applyToUser(UserModel user, PosixDetails details) {
+        user.setSingleAttribute(PosixAttributeNames.USERNAME, details.getUsername());
         user.setSingleAttribute(PosixAttributeNames.UID_NUMBER, String.valueOf(details.getUid()));
         user.setSingleAttribute(PosixAttributeNames.GID_NUMBER, String.valueOf(details.getGid()));
         user.setSingleAttribute(PosixAttributeNames.HOME_DIRECTORY, details.getHomeDirectory());
@@ -96,6 +97,7 @@ public final class PosixProvisioner {
     }
 
     public static void applyToLdapUser(LDAPObject ldapUser, PosixDetails details) {
+        ldapUser.setSingleAttribute(PosixAttributeNames.LDAP_UID, details.getUsername());
         ldapUser.setSingleAttribute(PosixAttributeNames.LDAP_UID_NUMBER, String.valueOf(details.getUid()));
         ldapUser.setSingleAttribute(PosixAttributeNames.LDAP_GID_NUMBER, String.valueOf(details.getGid()));
         ldapUser.setSingleAttribute(PosixAttributeNames.LDAP_HOME_DIRECTORY, details.getHomeDirectory());

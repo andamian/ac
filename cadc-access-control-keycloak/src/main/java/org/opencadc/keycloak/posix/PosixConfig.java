@@ -68,6 +68,7 @@
 package org.opencadc.keycloak.posix;
 
 import java.util.Map;
+import org.keycloak.models.UserModel;
 
 /**
  * Configuration for POSIX account provisioning.
@@ -76,21 +77,34 @@ public class PosixConfig {
 
     public static final String UID_MIN = "posix.uid.min";
     public static final String UID_MAX = "posix.uid.max";
+    public static final String USERS_HOME = "posix.users.home";
+    public static final String USERNAME_TEMPLATE = "posix.username.template";
     public static final String HOME_TEMPLATE = "posix.home.template";
     public static final String LOGIN_SHELL = "posix.login.shell";
 
-    public static final String DEFAULT_HOME_TEMPLATE = "/home/{uid}";
+    public static final String DEFAULT_USERS_HOME = "/home";
+    public static final String DEFAULT_USERNAME_TEMPLATE = "{uid}";
+    public static final String DEFAULT_HOME_TEMPLATE = "{usersHome}/{username}";
     public static final String DEFAULT_LOGIN_SHELL = "/bin/nologin";
     public static final int DEFAULT_UID_MIN = 10000;
     public static final int DEFAULT_MAX_RETRIES = 25;
 
     private final int uidMin;
     private final int uidMax;
+    private final String usersHome;
+    private final String usernameTemplate;
     private final String homeTemplate;
     private final String loginShell;
     private final int maxRetries;
 
-    public PosixConfig(int uidMin, int uidMax, String homeTemplate, String loginShell, int maxRetries) {
+    public PosixConfig(int uidMin, int uidMax, String usersHome, String usernameTemplate, String homeTemplate,
+            String loginShell, int maxRetries) {
+        if (usersHome == null) {
+            throw new IllegalArgumentException("usersHome is null");
+        }
+        if (usernameTemplate == null) {
+            throw new IllegalArgumentException("usernameTemplate is null");
+        }
         if (homeTemplate == null) {
             throw new IllegalArgumentException("homeTemplate is null");
         }
@@ -108,6 +122,8 @@ public class PosixConfig {
         }
         this.uidMin = uidMin;
         this.uidMax = uidMax;
+        this.usersHome = usersHome;
+        this.usernameTemplate = usernameTemplate;
         this.homeTemplate = homeTemplate;
         this.loginShell = loginShell;
         this.maxRetries = maxRetries;
@@ -117,9 +133,12 @@ public class PosixConfig {
         int uidMin = parseInt(getConfigValue(config, UID_MIN, String.valueOf(DEFAULT_UID_MIN)), DEFAULT_UID_MIN);
         int uidMax = parseInt(getConfigValue(config, UID_MAX, String.valueOf(Integer.MAX_VALUE)),
                 Integer.MAX_VALUE);
+        String usersHome = getConfigValue(config, USERS_HOME, DEFAULT_USERS_HOME);
+        String usernameTemplate = getConfigValue(config, USERNAME_TEMPLATE, DEFAULT_USERNAME_TEMPLATE);
         String homeTemplate = getConfigValue(config, HOME_TEMPLATE, DEFAULT_HOME_TEMPLATE);
         String loginShell = getConfigValue(config, LOGIN_SHELL, DEFAULT_LOGIN_SHELL);
-        return new PosixConfig(uidMin, uidMax, homeTemplate, loginShell, DEFAULT_MAX_RETRIES);
+        return new PosixConfig(uidMin, uidMax, usersHome, usernameTemplate, homeTemplate, loginShell,
+                DEFAULT_MAX_RETRIES);
     }
 
     public int getUidMin() {
@@ -128,6 +147,14 @@ public class PosixConfig {
 
     public int getUidMax() {
         return uidMax;
+    }
+
+    public String getUsersHome() {
+        return usersHome;
+    }
+
+    public String getUsernameTemplate() {
+        return usernameTemplate;
     }
 
     public String getHomeTemplate() {
@@ -142,8 +169,31 @@ public class PosixConfig {
         return maxRetries;
     }
 
-    public static String renderHomeDirectory(String template, String username, int uid) {
-        return template.replace("{uid}", String.valueOf(uid)).replace("{username}", username);
+    public static String resolvePosixUsername(UserModel user, PosixConfig config, int uid) {
+        String preset = user == null ? null : user.getFirstAttribute(PosixAttributeNames.USERNAME);
+        String keycloakUsername = user == null ? null : user.getUsername();
+        return resolvePosixUsername(preset, config, uid, keycloakUsername);
+    }
+
+    public static String resolvePosixUsername(String preset, PosixConfig config, int uid, String keycloakUsername) {
+        if (preset != null && !preset.trim().isEmpty()) {
+            return preset.trim();
+        }
+        return renderTemplate(config.getUsernameTemplate(), config, uid, keycloakUsername, null);
+    }
+
+    public static String renderHomeDirectory(PosixConfig config, int uid, String posixUsername,
+            String keycloakUsername) {
+        return renderTemplate(config.getHomeTemplate(), config, uid, keycloakUsername, posixUsername);
+    }
+
+    private static String renderTemplate(String template, PosixConfig config, int uid, String keycloakUsername,
+            String posixUsername) {
+        String resolvedUsername = posixUsername == null ? "" : posixUsername;
+        return template.replace("{usersHome}", config.getUsersHome())
+                .replace("{username}", resolvedUsername)
+                .replace("{uid}", String.valueOf(uid))
+                .replace("{keycloakUsername}", keycloakUsername == null ? "" : keycloakUsername);
     }
 
     private static String getConfigValue(Map<String, String> config, String key, String defaultValue) {

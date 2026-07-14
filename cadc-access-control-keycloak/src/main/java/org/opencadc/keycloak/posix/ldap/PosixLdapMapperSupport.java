@@ -102,8 +102,8 @@ final class PosixLdapMapperSupport {
         return config;
     }
 
-    PosixDetails allocate(String username, RealmModel realm) {
-        return PosixUidInUseChecks.allocateInLdap(config, ldapProvider, realm, username);
+    PosixDetails allocate(UserModel user, RealmModel realm) {
+        return PosixUidInUseChecks.allocateInLdap(config, ldapProvider, realm, user);
     }
 
     static boolean hasPosixAttributes(LDAPObject ldapUser) {

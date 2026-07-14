@@ -107,9 +107,9 @@ public final class PosixUidInUseChecks {
     }
 
     public static PosixDetails allocateInLdap(PosixConfig config, LDAPStorageProvider ldapProvider,
-            RealmModel realm, String username) {
-        if (username == null) {
-            throw new IllegalArgumentException("username is null");
+            RealmModel realm, UserModel user) {
+        if (user == null) {
+            throw new IllegalArgumentException("user is null");
         }
         int range = config.getUidMax() - config.getUidMin();
         if (range <= 0) {
@@ -121,12 +121,14 @@ public final class PosixUidInUseChecks {
         for (int attempt = 0; attempt < config.getMaxRetries(); attempt++) {
             int uid = config.getUidMin() + random.nextInt(range);
             if (!isInUseInLdap(ldapProvider, realm, uid)) {
-                String homeDirectory = PosixConfig.renderHomeDirectory(config.getHomeTemplate(), username, uid);
-                return new PosixDetails(username, uid, uid, homeDirectory, config.getLoginShell());
+                String posixUsername = PosixConfig.resolvePosixUsername(user, config, uid);
+                String homeDirectory = PosixConfig.renderHomeDirectory(config, uid, posixUsername,
+                        user.getUsername());
+                return new PosixDetails(posixUsername, uid, uid, homeDirectory, config.getLoginShell());
             }
         }
 
-        throw new PosixAllocationException("failed to allocate UID for user " + username
+        throw new PosixAllocationException("failed to allocate UID for user " + user.getUsername()
                 + " after " + config.getMaxRetries() + " attempts");
     }
 }

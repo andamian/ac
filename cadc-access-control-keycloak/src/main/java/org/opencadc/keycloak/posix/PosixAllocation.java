@@ -69,6 +69,7 @@ package org.opencadc.keycloak.posix;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
  * Entry points for allocating POSIX account details.
@@ -79,7 +80,7 @@ public final class PosixAllocation {
     }
 
     public static PosixDetails allocate(PosixConfig config, KeycloakSession session, RealmModel realm,
-            String username) {
-        return new RandomPosixAllocator(config).allocateInKeycloakDb(username, session, realm);
+            UserModel user) {
+        return new RandomPosixAllocator(config).allocateInKeycloakDb(user, session, realm);
     }
 }

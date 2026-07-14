@@ -106,14 +106,16 @@ public class PosixAccountLDAPStorageMapper extends AbstractLDAPStorageMapper {
             return;
         }
 
-        PosixDetails details = support.allocate(localUser.getUsername(), realm);
+        PosixDetails details = support.allocate(localUser, realm);
         PosixLdapMapperSupport.apply(ldapUser, localUser, details);
-        LOG.infof("Provisioned POSIX account for LDAP user %s: uid=%d", localUser.getUsername(), details.getUid());
+        LOG.infof("Provisioned POSIX account for LDAP user %s: uid=%d, posixUsername=%s",
+                localUser.getUsername(), details.getUid(), details.getUsername());
     }
 
     @Override
     public Set<String> mandatoryAttributeNames() {
         Set<String> names = new LinkedHashSet<>();
+        names.add(PosixAttributeNames.LDAP_UID);
         names.add(PosixAttributeNames.LDAP_UID_NUMBER);
         names.add(PosixAttributeNames.LDAP_GID_NUMBER);
         names.add(PosixAttributeNames.LDAP_HOME_DIRECTORY);

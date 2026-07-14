@@ -72,11 +72,13 @@ package org.opencadc.keycloak.posix;
  */
 public final class PosixAttributeNames {
 
+    public static final String USERNAME = "posix.username";
     public static final String UID_NUMBER = "posix.uidNumber";
     public static final String GID_NUMBER = "posix.gidNumber";
     public static final String HOME_DIRECTORY = "posix.homeDirectory";
     public static final String LOGIN_SHELL = "posix.loginShell";
 
+    public static final String LDAP_UID = "uid";
     public static final String LDAP_UID_NUMBER = "uidNumber";
     public static final String LDAP_GID_NUMBER = "gidNumber";
     public static final String LDAP_HOME_DIRECTORY = "homeDirectory";

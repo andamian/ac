@@ -150,9 +150,10 @@ public class PosixEventListenerProvider implements EventListenerProvider {
             return;
         }
 
-        PosixDetails details = PosixAllocation.allocate(config, session, realm, user.getUsername());
+        PosixDetails details = PosixAllocation.allocate(config, session, realm, user);
         PosixProvisioner.applyToUser(user, details);
-        LOG.infof("Provisioned POSIX account for local user %s: uid=%d", user.getUsername(), details.getUid());
+        LOG.infof("Provisioned POSIX account for local user %s: uid=%d, posixUsername=%s",
+                user.getUsername(), details.getUid(), details.getUsername());
     }
 
     private boolean isLocalUser(UserModel user) {

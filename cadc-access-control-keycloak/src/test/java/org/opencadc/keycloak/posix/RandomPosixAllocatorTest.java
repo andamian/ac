@@ -78,22 +78,36 @@ public class RandomPosixAllocatorTest {
 
     @Test
     public void testAllocateWithinRange() {
-        PosixConfig config = new PosixConfig(10000, 20000, "/home/{uid}", "/bin/nologin", 5);
+        PosixConfig config = new PosixConfig(10000, 20000, "/home", "{uid}", "{usersHome}/{username}",
+                "/bin/nologin", 5);
         RandomPosixAllocator allocator = RandomPosixAllocator.forTesting(config, new Random(1),
                 Collections.emptySet());
-        PosixDetails details = RandomPosixAllocator.allocateForTesting(allocator, "alice");
+        PosixDetails details = RandomPosixAllocator.allocateForTesting(allocator, "alice@example.com", null);
         assertTrue(details.getUid() >= 10000);
         assertTrue(details.getUid() < 20000);
         assertEquals(details.getUid(), details.getGid());
+        assertEquals(String.valueOf(details.getUid()), details.getUsername());
         assertEquals("/home/" + details.getUid(), details.getHomeDirectory());
         assertEquals("/bin/nologin", details.getLoginShell());
     }
 
+    @Test
+    public void testAllocateUsesPresetPosixUsername() {
+        PosixConfig config = new PosixConfig(10000, 20000, "/home", "{uid}", "{usersHome}/{username}",
+                "/bin/nologin", 5);
+        RandomPosixAllocator allocator = RandomPosixAllocator.forTesting(config, new Random(1),
+                Collections.emptySet());
+        PosixDetails details = RandomPosixAllocator.allocateForTesting(allocator, "alice@example.com", "bob");
+        assertEquals("bob", details.getUsername());
+        assertEquals("/home/bob", details.getHomeDirectory());
+    }
+
     @Test(expected = PosixAllocationException.class)
     public void testAllocateFailsWhenAllCandidatesInUse() {
-        PosixConfig config = new PosixConfig(10000, 10002, "/home/{uid}", "/bin/nologin", 2);
+        PosixConfig config = new PosixConfig(10000, 10002, "/home", "{uid}", "{usersHome}/{username}",
+                "/bin/nologin", 2);
         RandomPosixAllocator allocator = RandomPosixAllocator.forTesting(config, new Random(1),
                 Set.of(10000, 10001));
-        RandomPosixAllocator.allocateForTesting(allocator, "alice");
+        RandomPosixAllocator.allocateForTesting(allocator, "alice@example.com", null);
     }
 }

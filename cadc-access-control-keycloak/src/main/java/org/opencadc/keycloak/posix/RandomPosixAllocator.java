@@ -72,6 +72,7 @@ import java.util.Random;
 import java.util.Set;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 
 /**
  * Allocates POSIX UIDs using a pseudo-random strategy with collision checks.
@@ -104,16 +105,17 @@ public final class RandomPosixAllocator {
                 : Collections.unmodifiableSet(uidsInUseForTesting);
     }
 
-    static PosixDetails allocateForTesting(RandomPosixAllocator allocator, String username) {
+    static PosixDetails allocateForTesting(RandomPosixAllocator allocator, String keycloakUsername,
+            String presetPosixUsername) {
         if (allocator.uidsInUseForTesting == null) {
             throw new IllegalArgumentException("allocator is not configured for testing");
         }
-        return allocator.allocateForTesting(username);
+        return allocator.allocateForTesting(keycloakUsername, presetPosixUsername);
     }
 
-    private PosixDetails allocateForTesting(String username) {
-        if (username == null) {
-            throw new IllegalArgumentException("username is null");
+    private PosixDetails allocateForTesting(String keycloakUsername, String presetPosixUsername) {
+        if (keycloakUsername == null) {
+            throw new IllegalArgumentException("keycloakUsername is null");
         }
         int range = config.getUidMax() - config.getUidMin();
         if (range <= 0) {
@@ -124,17 +126,17 @@ public final class RandomPosixAllocator {
         for (int attempt = 0; attempt < config.getMaxRetries(); attempt++) {
             int uid = config.getUidMin() + random.nextInt(range);
             if (!uidsInUseForTesting.contains(uid)) {
-                return buildDetails(username, uid);
+                return buildDetails(keycloakUsername, presetPosixUsername, uid);
             }
         }
 
-        throw new PosixAllocationException("failed to allocate UID for user " + username
+        throw new PosixAllocationException("failed to allocate UID for user " + keycloakUsername
                 + " after " + config.getMaxRetries() + " attempts");
     }
 
-    public PosixDetails allocateInKeycloakDb(String username, KeycloakSession session, RealmModel realm) {
-        if (username == null) {
-            throw new IllegalArgumentException("username is null");
+    public PosixDetails allocateInKeycloakDb(UserModel user, KeycloakSession session, RealmModel realm) {
+        if (user == null) {
+            throw new IllegalArgumentException("user is null");
         }
         int range = config.getUidMax() - config.getUidMin();
         if (range <= 0) {
@@ -145,11 +147,11 @@ public final class RandomPosixAllocator {
         for (int attempt = 0; attempt < config.getMaxRetries(); attempt++) {
             int uid = config.getUidMin() + random.nextInt(range);
             if (!uidInUse(uid, session, realm)) {
-                return buildDetails(username, uid);
+                return buildDetails(user, uid);
             }
         }
 
-        throw new PosixAllocationException("failed to allocate UID for user " + username
+        throw new PosixAllocationException("failed to allocate UID for user " + user.getUsername()
                 + " after " + config.getMaxRetries() + " attempts");
     }
 
@@ -160,8 +162,13 @@ public final class RandomPosixAllocator {
         return PosixUidInUseChecks.isInUseInKeycloakDb(session, realm, uid);
     }
 
-    private PosixDetails buildDetails(String username, int uid) {
-        String homeDirectory = PosixConfig.renderHomeDirectory(config.getHomeTemplate(), username, uid);
-        return new PosixDetails(username, uid, uid, homeDirectory, config.getLoginShell());
+    private PosixDetails buildDetails(UserModel user, int uid) {
+        return buildDetails(user.getUsername(), user.getFirstAttribute(PosixAttributeNames.USERNAME), uid);
+    }
+
+    private PosixDetails buildDetails(String keycloakUsername, String presetPosixUsername, int uid) {
+        String posixUsername = PosixConfig.resolvePosixUsername(presetPosixUsername, config, uid, keycloakUsername);
+        String homeDirectory = PosixConfig.renderHomeDirectory(config, uid, posixUsername, keycloakUsername);
+        return new PosixDetails(posixUsername, uid, uid, homeDirectory, config.getLoginShell());
     }
 }

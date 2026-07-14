@@ -95,6 +95,8 @@ public class PosixEventListenerProviderFactory implements EventListenerProviderF
         Map<String, String> values = new HashMap<>();
         values.put(PosixConfig.UID_MIN, config.get(PosixConfig.UID_MIN));
         values.put(PosixConfig.UID_MAX, config.get(PosixConfig.UID_MAX));
+        values.put(PosixConfig.USERS_HOME, config.get(PosixConfig.USERS_HOME));
+        values.put(PosixConfig.USERNAME_TEMPLATE, config.get(PosixConfig.USERNAME_TEMPLATE));
         values.put(PosixConfig.HOME_TEMPLATE, config.get(PosixConfig.HOME_TEMPLATE));
         values.put(PosixConfig.LOGIN_SHELL, config.get(PosixConfig.LOGIN_SHELL));
         this.config = PosixConfig.fromMap(values);

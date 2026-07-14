@@ -73,21 +73,37 @@ import static org.junit.Assert.assertEquals;
 public class PosixConfigTest {
 
     @Test
-    public void testRenderHomeDirectory() {
-        String home = PosixConfig.renderHomeDirectory("/home/{uid}", "alice", 12345);
+    public void testRenderHomeDirectoryDefaultTemplate() {
+        PosixConfig config = PosixConfig.fromMap(null);
+        String home = PosixConfig.renderHomeDirectory(config, 12345, "12345", "alice@example.com");
         assertEquals("/home/12345", home);
     }
 
     @Test
-    public void testRenderHomeDirectoryWithUsername() {
-        String home = PosixConfig.renderHomeDirectory("/storage/{username}", "alice", 12345);
-        assertEquals("/storage/alice", home);
+    public void testRenderHomeDirectoryWithPresetUsername() {
+        PosixConfig config = PosixConfig.fromMap(null);
+        String home = PosixConfig.renderHomeDirectory(config, 12345, "bob", "alice@example.com");
+        assertEquals("/home/bob", home);
+    }
+
+    @Test
+    public void testResolvePosixUsernameDefaultsToUid() {
+        PosixConfig config = PosixConfig.fromMap(null);
+        assertEquals("12345", PosixConfig.resolvePosixUsername(null, config, 12345, "alice@example.com"));
+    }
+
+    @Test
+    public void testResolvePosixUsernameUsesPresetAttribute() {
+        PosixConfig config = PosixConfig.fromMap(null);
+        assertEquals("bob", PosixConfig.resolvePosixUsername("bob", config, 12345, "alice@example.com"));
     }
 
     @Test
     public void testFromMapDefaults() {
         PosixConfig config = PosixConfig.fromMap(null);
         assertEquals(PosixConfig.DEFAULT_UID_MIN, config.getUidMin());
+        assertEquals(PosixConfig.DEFAULT_USERS_HOME, config.getUsersHome());
+        assertEquals(PosixConfig.DEFAULT_USERNAME_TEMPLATE, config.getUsernameTemplate());
         assertEquals(PosixConfig.DEFAULT_HOME_TEMPLATE, config.getHomeTemplate());
         assertEquals(PosixConfig.DEFAULT_LOGIN_SHELL, config.getLoginShell());
     }

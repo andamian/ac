@@ -98,7 +98,7 @@ public class PosixAccountLDAPStorageMapperFactory extends AbstractLDAPStorageMap
 
     @Override
     public String getHelpText() {
-        return "Assigns POSIX account attributes (uidNumber, gidNumber, homeDirectory, loginShell) "
+        return "Assigns POSIX account attributes (uid, uidNumber, gidNumber, homeDirectory, loginShell) "
                 + "when Keycloak registers a new user in LDAP.";
     }
 
@@ -141,9 +141,21 @@ public class PosixAccountLDAPStorageMapperFactory extends AbstractLDAPStorageMap
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue(String.valueOf(Integer.MAX_VALUE))
                 .add()
+                .property().name(PosixConfig.USERS_HOME)
+                .label("Users home base directory")
+                .helpText("Base directory for home paths; used by the {usersHome} placeholder")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .defaultValue(PosixConfig.DEFAULT_USERS_HOME)
+                .add()
+                .property().name(PosixConfig.USERNAME_TEMPLATE)
+                .label("POSIX username template")
+                .helpText("Used when posix.username is not already set; supports {uid} and {keycloakUsername}")
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .defaultValue(PosixConfig.DEFAULT_USERNAME_TEMPLATE)
+                .add()
                 .property().name(PosixConfig.HOME_TEMPLATE)
                 .label("Home directory template")
-                .helpText("Supports {uid} and {username} placeholders")
+                .helpText("Supports {usersHome}, {username}, {uid}, and {keycloakUsername} placeholders")
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .defaultValue(PosixConfig.DEFAULT_HOME_TEMPLATE)
                 .add()

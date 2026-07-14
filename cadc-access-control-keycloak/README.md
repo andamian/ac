@@ -6,7 +6,7 @@ user federation.
 
 ## Features
 
-- Assigns `uidNumber`, `gidNumber`, `homeDirectory`, and `loginShell` on user creation
+- Assigns `uidNumber`, `gidNumber`, `homeDirectory`, `loginShell`, and `posix.username` on user creation
 - LDAP backend via `opencadc-posix-account` LDAP mapper
 - Keycloak DB backend via `opencadc-posix` event listener
 - Skips users that already have POSIX attributes
@@ -16,10 +16,18 @@ user federation.
 
 | Keycloak attribute | LDAP attribute | Default |
 |--------------------|--------------|---------|
+| `posix.username` | `uid` | `{uid}` (numeric UID as string) |
 | `posix.uidNumber` | `uidNumber` | allocated UID |
 | `posix.gidNumber` | `gidNumber` | same as UID |
-| `posix.homeDirectory` | `homeDirectory` | `/home/{uid}` |
+| `posix.homeDirectory` | `homeDirectory` | `{usersHome}/{username}` → `/home/{uid}` |
 | `posix.loginShell` | `loginShell` | `/bin/nologin` |
+
+`posix.username` may be set before provisioning runs — for example via an Identity Provider
+attribute mapper (external claim) or a user profile / registration field. When absent, the
+configured username template is applied (default `{uid}`).
+
+For a full walkthrough using the [SKA IAM prototype](https://ska-iam.stfc.ac.uk/) INDIGO
+IAM IdP, see [INDIGO IAM (SKA IAM) setup](docs/INDIGO-IAM-SKAIAM-Setup.md).
 
 ## Building
 
@@ -86,9 +94,20 @@ Optional listener settings in `keycloak.conf`:
 ```properties
 spi-events-listener-opencadc-posix-posix.uid.min=10000
 spi-events-listener-opencadc-posix-posix.uid.max=2000000000
-spi-events-listener-opencadc-posix-posix.home.template=/home/{uid}
+spi-events-listener-opencadc-posix-posix.users.home=/home
+spi-events-listener-opencadc-posix-posix.username.template={uid}
+spi-events-listener-opencadc-posix-posix.home.template={usersHome}/{username}
 spi-events-listener-opencadc-posix-posix.login.shell=/bin/nologin
 ```
+
+Template placeholders:
+
+| Placeholder | Meaning |
+|-------------|---------|
+| `{usersHome}` | Value of `posix.users.home` (default `/home`) |
+| `{username}` | Resolved `posix.username` |
+| `{uid}` | Allocated numeric UID |
+| `{keycloakUsername}` | Keycloak login username |
 
 ## Scope
 
