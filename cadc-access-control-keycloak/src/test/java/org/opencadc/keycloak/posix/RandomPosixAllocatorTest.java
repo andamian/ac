@@ -82,12 +82,12 @@ public class RandomPosixAllocatorTest {
                 "/bin/nologin", 5);
         RandomPosixAllocator allocator = RandomPosixAllocator.forTesting(config, new Random(1),
                 Collections.emptySet());
-        PosixDetails details = RandomPosixAllocator.allocateForTesting(allocator, "alice@example.com", null);
+        PosixDetails details = RandomPosixAllocator.allocateForTesting(allocator, "alice", null);
         assertTrue(details.getUid() >= 10000);
         assertTrue(details.getUid() < 20000);
         assertEquals(details.getUid(), details.getGid());
-        assertEquals(String.valueOf(details.getUid()), details.getUsername());
-        assertEquals("/home/" + details.getUid(), details.getHomeDirectory());
+        assertEquals("alice", details.getUsername());
+        assertEquals("/home/alice", details.getHomeDirectory());
         assertEquals("/bin/nologin", details.getLoginShell());
     }
 

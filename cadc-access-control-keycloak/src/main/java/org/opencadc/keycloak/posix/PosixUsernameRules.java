@@ -65,108 +65,25 @@
  ************************************************************************
  */
 
-package org.opencadc.keycloak.posix.events;
+package org.opencadc.keycloak.posix;
 
-import org.jboss.logging.Logger;
-import org.keycloak.events.Event;
-import org.keycloak.events.EventListenerProvider;
-import org.keycloak.events.EventType;
-import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
-import org.opencadc.keycloak.posix.PosixAllocation;
-import org.opencadc.keycloak.posix.PosixAllocationException;
-import org.opencadc.keycloak.posix.PosixConfig;
-import org.opencadc.keycloak.posix.PosixDetails;
-import org.opencadc.keycloak.posix.PosixProvisioner;
-import org.opencadc.keycloak.posix.PosixUsernameInUseChecks;
-import org.opencadc.keycloak.posix.PosixUsernameValidation;
+import java.util.regex.Pattern;
 
 /**
- * Provisions POSIX account attributes for users stored in the Keycloak database.
+ * Validation rules for POSIX usernames.
  */
-public class PosixEventListenerProvider implements EventListenerProvider {
+public final class PosixUsernameRules {
 
-    private static final Logger LOG = Logger.getLogger(PosixEventListenerProvider.class);
+    /** Letters, digits, underscore, hyphen; no whitespace or other symbols. */
+    private static final Pattern POSIX_USERNAME = Pattern.compile("^[A-Za-z0-9_-]+$");
 
-    private final KeycloakSession session;
-    private final PosixConfig config;
-
-    public PosixEventListenerProvider(KeycloakSession session, PosixConfig config) {
-        this.session = session;
-        this.config = config;
+    private PosixUsernameRules() {
     }
 
-    @Override
-    public void onEvent(Event event) {
-        if (event.getType() != EventType.REGISTER) {
-            return;
+    public static boolean isValid(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
         }
-        RealmModel realm = session.realms().getRealm(event.getRealmId());
-        if (realm == null) {
-            LOG.warnf("Skipping POSIX provisioning for unknown realm %s", event.getRealmId());
-            return;
-        }
-        UserModel user = session.users().getUserById(realm, event.getUserId());
-        provisionLocalUser(realm, user, false);
-    }
-
-    @Override
-    public void onEvent(AdminEvent event, boolean includeRepresentation) {
-        if (event.getOperationType() != OperationType.CREATE) {
-            return;
-        }
-        if (event.getResourceType() != ResourceType.USER) {
-            return;
-        }
-        RealmModel realm = session.realms().getRealm(event.getRealmId());
-        if (realm == null) {
-            LOG.warnf("Skipping POSIX provisioning for unknown realm %s", event.getRealmId());
-            return;
-        }
-        String userId = PosixAdminEventPaths.extractUserId(event.getResourcePath());
-        if (userId == null) {
-            LOG.warnf("Skipping POSIX provisioning for admin event with path %s", event.getResourcePath());
-            return;
-        }
-        UserModel user = session.users().getUserById(realm, userId);
-        provisionLocalUser(realm, user, true);
-    }
-
-    @Override
-    public void close() {
-    }
-
-    private void provisionLocalUser(RealmModel realm, UserModel user, boolean adminCreated) {
-        if (user == null) {
-            return;
-        }
-        if (!isLocalUser(user)) {
-            LOG.debugf("Skipping POSIX provisioning for federated user %s", user.getUsername());
-            return;
-        }
-        if (PosixProvisioner.hasPosixAttributes(user)) {
-            LOG.debugf("Skipping POSIX provisioning for user %s: attributes already present", user.getUsername());
-            return;
-        }
-
-        if (adminCreated) {
-            PosixUsernameValidation.requireValidAndAvailableKeycloakUsername(session, realm, user);
-        }
-
-        PosixDetails details = PosixAllocation.allocate(config, session, realm, user);
-        if (PosixUsernameInUseChecks.isPosixUsernameInUse(session, realm, details.getUsername(), user.getId())) {
-            throw new PosixAllocationException("POSIX username already in use: " + details.getUsername());
-        }
-        PosixProvisioner.applyToUser(user, details);
-        LOG.infof("Provisioned POSIX account for local user %s: uid=%d, posixUsername=%s",
-                user.getUsername(), details.getUid(), details.getUsername());
-    }
-
-    private boolean isLocalUser(UserModel user) {
-        return user.getFederationLink() == null;
+        return POSIX_USERNAME.matcher(value).matches();
     }
 }

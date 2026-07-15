@@ -99,6 +99,32 @@ public class PosixConfigTest {
     }
 
     @Test
+    public void testResolvePosixUsernameUsesKeycloakUsername() {
+        PosixConfig config = PosixConfig.fromMap(null);
+        assertEquals("alice", PosixConfig.resolvePosixUsername(null, config, 12345, "alice"));
+        assertEquals("test_admin_user", PosixConfig.resolvePosixUsername(null, config, 12345, "test_admin_user"));
+    }
+
+    @Test
+    public void testResolvePosixUsernameSkipsInvalidKeycloakUsername() {
+        PosixConfig config = PosixConfig.fromMap(null);
+        assertEquals("12345", PosixConfig.resolvePosixUsername(null, config, 12345, "alice@example.com"));
+        assertEquals("12345", PosixConfig.resolvePosixUsername(null, config, 12345, "j.smith"));
+        assertEquals("12345", PosixConfig.resolvePosixUsername(null, config, 12345, "alice smith"));
+    }
+
+    @Test
+    public void testIsPosixUsernameCandidate() {
+        assertEquals(true, PosixConfig.isPosixUsernameCandidate("alice"));
+        assertEquals(true, PosixConfig.isPosixUsernameCandidate("test_admin_user"));
+        assertEquals(false, PosixConfig.isPosixUsernameCandidate("alice@example.com"));
+        assertEquals(false, PosixConfig.isPosixUsernameCandidate("j.smith"));
+        assertEquals(false, PosixConfig.isPosixUsernameCandidate("alice smith"));
+        assertEquals(false, PosixConfig.isPosixUsernameCandidate(" "));
+        assertEquals(false, PosixConfig.isPosixUsernameCandidate(null));
+    }
+
+    @Test
     public void testFromMapDefaults() {
         PosixConfig config = PosixConfig.fromMap(null);
         assertEquals(PosixConfig.DEFAULT_UID_MIN, config.getUidMin());

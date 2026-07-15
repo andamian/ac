@@ -177,9 +177,19 @@ public class PosixConfig {
 
     public static String resolvePosixUsername(String preset, PosixConfig config, int uid, String keycloakUsername) {
         if (preset != null && !preset.trim().isEmpty()) {
-            return preset.trim();
+            String trimmed = preset.trim();
+            if (PosixUsernameRules.isValid(trimmed)) {
+                return trimmed;
+            }
+        }
+        if (isPosixUsernameCandidate(keycloakUsername)) {
+            return keycloakUsername.trim();
         }
         return renderTemplate(config.getUsernameTemplate(), config, uid, keycloakUsername, null);
+    }
+
+    static boolean isPosixUsernameCandidate(String keycloakUsername) {
+        return keycloakUsername != null && PosixUsernameRules.isValid(keycloakUsername.trim());
     }
 
     public static String renderHomeDirectory(PosixConfig config, int uid, String posixUsername,

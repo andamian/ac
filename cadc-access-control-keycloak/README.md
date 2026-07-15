@@ -29,6 +29,10 @@ configured username template is applied (default `{uid}`).
 For a full walkthrough using the [SKA IAM prototype](https://ska-iam.stfc.ac.uk/) INDIGO
 IAM IdP, see [INDIGO IAM (SKA IAM) setup](docs/INDIGO-IAM-SKAIAM-Setup.md).
 
+For admin-console user creation — using the **Username** field as `posix.username`
+with format and duplicate-name validation — see [Admin user creation](docs/Admin-User-Creation.md).
+Invalid admin usernames are rejected in the Admin Console before the account is created.
+
 ## Building
 
 Requires Java 17 to compile and test. The Gradle wrapper runs on Java 11, but this module
