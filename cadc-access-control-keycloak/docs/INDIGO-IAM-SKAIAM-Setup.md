@@ -85,7 +85,7 @@ POSIX attributes are stored as custom user attributes (`posix.username`, etc.).
 2. Under **Event listeners**, add **opencadc-posix**.
 3. Save.
 
-See the main [README](../README.md) for optional `keycloak.conf` tuning of UID
+See the main [README](../README.md) for optional `keycloak.properties` tuning of UID
 ranges and home-directory templates.
 
 ### 2.4 Add SKAIAM as an OIDC identity provider

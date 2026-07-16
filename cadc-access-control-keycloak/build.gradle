@@ -37,6 +37,7 @@ description = 'OpenCADC Keycloak POSIX account provisioning extension'
 def git_url = 'https://github.com/opencadc/ac'
 
 def keycloakVersion = '26.6.4'
+def quarkusVersion = '3.33.2.1'
 
 configurations {
     keycloakSpi
@@ -48,14 +49,20 @@ dependencies {
     keycloakSpi("org.keycloak:keycloak-common:${keycloakVersion}") { transitive = false }
     keycloakSpi("org.keycloak:keycloak-server-spi:${keycloakVersion}") { transitive = false }
     keycloakSpi("org.keycloak:keycloak-server-spi-private:${keycloakVersion}") { transitive = false }
+    keycloakSpi("org.keycloak:keycloak-model-storage:${keycloakVersion}") { transitive = false }
     keycloakSpi("org.keycloak:keycloak-services:${keycloakVersion}") { transitive = false }
     keycloakSpi("org.keycloak:keycloak-ldap-federation:${keycloakVersion}") { transitive = false }
+    keycloakSpi("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0") { transitive = false }
+    keycloakSpi("jakarta.enterprise:jakarta.enterprise.cdi-api:4.0.1") { transitive = false }
+    keycloakSpi("jakarta.inject:jakarta.inject-api:2.0.1") { transitive = false }
+    keycloakSpi("io.quarkus:quarkus-reactive-routes:${quarkusVersion}") { transitive = false }
     keycloakSpi("org.jboss.logging:jboss-logging:3.5.3.Final")
 
     testImplementation 'junit:junit:[4.13,5.0)'
     testImplementation("org.keycloak:keycloak-server-spi:${keycloakVersion}") { transitive = false }
     testImplementation("org.keycloak:keycloak-server-spi-private:${keycloakVersion}") { transitive = false }
     testImplementation("org.keycloak:keycloak-core:${keycloakVersion}") { transitive = false }
+    testImplementation("org.keycloak:keycloak-ldap-federation:${keycloakVersion}") { transitive = false }
 }
 
 jar {
