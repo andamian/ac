@@ -162,3 +162,6 @@ that scope.
 | Keycloak redirect URI (this example) | `http://localhost:8080/realms/master/broker/SKAIAM/endpoint` |
 | Required scopes | `openid profile email` |
 | Claim → attribute | `preferred_username` → `posix.username` |
+
+To map stored POSIX attributes into outbound JWT access tokens for internal services,
+see [POSIX token claims](POSIX-Token-Claims.md).

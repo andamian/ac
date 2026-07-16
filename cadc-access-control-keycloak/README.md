@@ -33,6 +33,9 @@ For admin-console user creation — using the **Username** field as `posix.usern
 with format and duplicate-name validation — see [Admin user creation](docs/Admin-User-Creation.md).
 Invalid admin usernames are rejected in the Admin Console before the account is created.
 
+To expose POSIX attributes as claims in OIDC access tokens for internal services, see
+[POSIX token claims](docs/POSIX-Token-Claims.md).
+
 ## Building
 
 Requires Java 17 to compile and test. The Gradle wrapper runs on Java 11, but this module
