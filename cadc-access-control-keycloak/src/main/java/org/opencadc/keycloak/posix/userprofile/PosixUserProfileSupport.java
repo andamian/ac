@@ -23,6 +23,7 @@ import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.opencadc.keycloak.posix.validator.PosixUsernameFormatValidator;
+import org.opencadc.keycloak.posix.validator.PosixUsernameReservedPrefixValidator;
 import org.opencadc.keycloak.posix.validator.PosixUsernameUniqueValidator;
 
 /**
@@ -54,6 +55,7 @@ public final class PosixUserProfileSupport {
         AttributeMetadata username = usernameAttributes.get(0);
         username.addValidators(List.of(
                 new AttributeValidatorMetadata(PosixUsernameFormatValidator.ID),
-                new AttributeValidatorMetadata(PosixUsernameUniqueValidator.ID)));
+                new AttributeValidatorMetadata(PosixUsernameUniqueValidator.ID),
+                new AttributeValidatorMetadata(PosixUsernameReservedPrefixValidator.ID)));
     }
 }

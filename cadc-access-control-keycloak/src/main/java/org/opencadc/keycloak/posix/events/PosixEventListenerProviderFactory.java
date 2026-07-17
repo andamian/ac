@@ -75,6 +75,9 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.opencadc.keycloak.posix.PosixConfig;
+import org.opencadc.keycloak.posix.PosixConfigBootstrap;
+import org.opencadc.keycloak.posix.PosixIssPrefixConfigResolver;
+import org.opencadc.keycloak.posix.PosixRuntimeConfig;
 
 /**
  * Factory for the OpenCADC POSIX event listener.
@@ -99,7 +102,11 @@ public class PosixEventListenerProviderFactory implements EventListenerProviderF
         values.put(PosixConfig.USERNAME_TEMPLATE, config.get(PosixConfig.USERNAME_TEMPLATE));
         values.put(PosixConfig.HOME_TEMPLATE, config.get(PosixConfig.HOME_TEMPLATE));
         values.put(PosixConfig.LOGIN_SHELL, config.get(PosixConfig.LOGIN_SHELL));
+        String issPrefixesRaw = PosixIssPrefixConfigResolver.resolve(config);
+        values.put(PosixConfig.ISS_PREFIXES, issPrefixesRaw);
         this.config = PosixConfig.fromMap(values);
+        PosixRuntimeConfig.set(this.config);
+        PosixConfigBootstrap.loadIssuerPrefixes(config);
     }
 
     @Override

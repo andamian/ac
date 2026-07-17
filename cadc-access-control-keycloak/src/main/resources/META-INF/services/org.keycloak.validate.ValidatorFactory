@@ -1,2 +1,3 @@
 org.opencadc.keycloak.posix.validator.PosixUsernameUniqueValidator
 org.opencadc.keycloak.posix.validator.PosixUsernameFormatValidator
+org.opencadc.keycloak.posix.validator.PosixUsernameReservedPrefixValidator

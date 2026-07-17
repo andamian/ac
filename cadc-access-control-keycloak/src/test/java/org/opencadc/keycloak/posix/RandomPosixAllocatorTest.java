@@ -79,7 +79,7 @@ public class RandomPosixAllocatorTest {
     @Test
     public void testAllocateWithinRange() {
         PosixConfig config = new PosixConfig(10000, 20000, "/home", "{uid}", "{usersHome}/{username}",
-                "/bin/nologin", 5);
+                "/bin/nologin", 5, null);
         RandomPosixAllocator allocator = RandomPosixAllocator.forTesting(config, new Random(1),
                 Collections.emptySet());
         PosixDetails details = RandomPosixAllocator.allocateForTesting(allocator, "alice", null);
@@ -94,7 +94,7 @@ public class RandomPosixAllocatorTest {
     @Test
     public void testAllocateUsesPresetPosixUsername() {
         PosixConfig config = new PosixConfig(10000, 20000, "/home", "{uid}", "{usersHome}/{username}",
-                "/bin/nologin", 5);
+                "/bin/nologin", 5, null);
         RandomPosixAllocator allocator = RandomPosixAllocator.forTesting(config, new Random(1),
                 Collections.emptySet());
         PosixDetails details = RandomPosixAllocator.allocateForTesting(allocator, "alice@example.com", "bob");
@@ -105,7 +105,7 @@ public class RandomPosixAllocatorTest {
     @Test(expected = PosixAllocationException.class)
     public void testAllocateFailsWhenAllCandidatesInUse() {
         PosixConfig config = new PosixConfig(10000, 10002, "/home", "{uid}", "{usersHome}/{username}",
-                "/bin/nologin", 2);
+                "/bin/nologin", 2, null);
         RandomPosixAllocator allocator = RandomPosixAllocator.forTesting(config, new Random(1),
                 Set.of(10000, 10001));
         RandomPosixAllocator.allocateForTesting(allocator, "alice@example.com", null);

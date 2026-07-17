@@ -11,6 +11,7 @@ user federation.
 - Keycloak DB backend via `opencadc-posix` event listener
 - Skips users that already have POSIX attributes
 - Random UID allocation within a configurable range
+- Optional OIDC issuer-based username prefixes for external IdP accounts (collision avoidance)
 - VOSI `/capabilities` and POSIX user-mapping `/uid` lookup REST endpoints
 
 ## User attributes
@@ -174,16 +175,34 @@ entry should support the `posixAccount` object class.
 1. Open **Realm settings → Events**.
 2. Enable the **opencadc-posix** event listener.
 
-Optional listener settings in `keycloak.properties`:
+Optional listener settings in `keycloak.conf`:
 
 ```properties
-spi-events-listener-opencadc-posix-posix.uid.min=10000
-spi-events-listener-opencadc-posix-posix.uid.max=2000000000
-spi-events-listener-opencadc-posix-posix.users.home=/home
-spi-events-listener-opencadc-posix-posix.username.template={uid}
-spi-events-listener-opencadc-posix-posix.home.template={usersHome}/{username}
-spi-events-listener-opencadc-posix-posix.login.shell=/bin/nologin
+spi-events-listener--opencadc-posix--enabled=true
+spi-events-listener--opencadc-posix--posix-uid-min=10000
+spi-events-listener--opencadc-posix--posix-uid-max=2000000000
+spi-events-listener--opencadc-posix--posix-users-home=/home
+spi-events-listener--opencadc-posix--posix-username-template={uid}
+spi-events-listener--opencadc-posix--posix-home-template={usersHome}/{username}
+spi-events-listener--opencadc-posix--posix-login-shell=/bin/nologin
+# Optional OIDC issuer -> username prefix pairs (comma-separated iss:prefix)
+# The final colon in each pair separates issuer URL from prefix.
+spi-events-listener--opencadc-posix--posix-username-iss-prefixes=https://ska-iam.stfc.ac.uk/:ska
 ```
+
+Keycloak SPI property names use **dashes** in `keycloak.conf`, not dots. For example,
+`posix.username.iss-prefixes` in code maps to
+`spi-events-listener--opencadc-posix--posix-username-iss-prefixes` in the file.
+The double dash (`--`) between SPI segments is Keycloak's standard format; a
+single-dash form such as
+`spi-events-listener-opencadc-posix-posix-username-iss-prefixes` is also accepted.
+
+When issuer-prefix pairs are configured, external IdP first-login provisioning maps
+the IdP `preferred_username` to `{prefix}-{preferred_username}` for both the Keycloak
+username and `posix.username` (for example `user` → `ska-user`). Usernames matching
+`{prefix}-*` are reserved for IdP-provisioned accounts; local admin, registration,
+and SCIM flows cannot claim them. Prefixing applies only on first IdP login; existing
+accounts are not renamed retroactively.
 
 Template placeholders:
 

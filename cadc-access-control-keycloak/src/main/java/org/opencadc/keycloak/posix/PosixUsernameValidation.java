@@ -39,6 +39,12 @@ public final class PosixUsernameValidation {
         }
     }
 
+    public static void requireNotReservedPrefixUsername(String username, PosixConfig config) {
+        if (config != null && config.isReservedPrefixUsername(username)) {
+            throw new PosixAllocationException("POSIX username reserved for external IdP accounts: " + username);
+        }
+    }
+
     public static void requireAvailablePosixUsername(KeycloakSession session, RealmModel realm, UserModel user) {
         String username = user.getUsername();
         if (PosixUsernameInUseChecks.isPosixUsernameInUse(session, realm, username, user.getId())) {
@@ -47,8 +53,9 @@ public final class PosixUsernameValidation {
     }
 
     public static void requireValidAndAvailableKeycloakUsername(KeycloakSession session, RealmModel realm,
-            UserModel user) {
+            UserModel user, PosixConfig config) {
         requireValidKeycloakUsername(user);
+        requireNotReservedPrefixUsername(user.getUsername(), config);
         requireAvailablePosixUsername(session, realm, user);
     }
 }

@@ -130,9 +130,32 @@ ranges and home-directory templates.
 
 4. Save.
 
-When a user first logs in via SKA IAM, Keycloak stores the IdP `preferred_username`
-as `posix.username`. The **opencadc-posix** listener then uses that value when
-allocating UID, home directory, and related POSIX attributes.
+When a user first logs in via SKA IAM, the Attribute Importer stores the IdP
+`preferred_username` as `posix.username`. The **opencadc-posix** listener then
+allocates UID, home directory, and related POSIX attributes. If an issuer-prefix
+pair is configured (see §2.7), the listener also renames the Keycloak username
+and `posix.username` to `{prefix}-{preferred_username}`.
+
+### 2.7 Optional POSIX username prefix (collision avoidance)
+
+To avoid collisions between local usernames and SKA IAM `preferred_username` values,
+configure an optional issuer-prefix pair in `keycloak.conf`:
+
+```properties
+spi-events-listener--opencadc-posix--enabled=true
+spi-events-listener--opencadc-posix--posix-username-iss-prefixes=https://ska-iam.stfc.ac.uk/:ska
+```
+
+Keycloak SPI property names use dashes in `keycloak.conf`, not dots. The double dash
+(`--`) between SPI segments is Keycloak's standard format.
+
+With this setting, a SKA IAM `preferred_username` of `user` is provisioned with
+Keycloak username and `posix.username` both set to `ska-user`. Usernames starting
+with `ska-` are reserved for external IdP account creation; local admin and
+registration cannot use them. Prefixing applies on first IdP login only.
+
+Additional external IdPs can be listed as comma-separated `iss:prefix` pairs. Each
+prefix must be unique across issuers.
 
 ---
 
@@ -142,8 +165,10 @@ allocating UID, home directory, and related POSIX attributes.
 2. Go to **Identity providers → SKAIAM** and click **Open connection** (or use a
    client application configured against Keycloak).
 3. Authenticate via SKA IAM.
-4. In the Admin Console, open **Users**, select the new user, and check **Attributes**:
-   - `posix.username` should match the SKA IAM `preferred_username`.
+4. In the Admin Console, open **Users**, select the new user, and check:
+   - **Username** and `posix.username` should match. Without an issuer prefix they
+     match the SKA IAM `preferred_username`; with a prefix configured they are both
+     `{prefix}-{preferred_username}` (for example `ska-user`).
    - `posix.uidNumber`, `posix.homeDirectory`, and other POSIX attributes should
      be populated by the event listener.
 
@@ -161,7 +186,8 @@ that scope.
 | OIDC discovery | `https://ska-iam.stfc.ac.uk/.well-known/openid-configuration` |
 | Keycloak redirect URI (this example) | `http://localhost:8080/realms/master/broker/SKAIAM/endpoint` |
 | Required scopes | `openid profile email` |
-| Claim → attribute | `preferred_username` → `posix.username` |
+| Claim → attribute | `preferred_username` → `posix.username` (listener may prefix both username and attribute) |
+| Optional iss-prefix | `https://ska-iam.stfc.ac.uk/:ska` → `ska-user` (Keycloak username and `posix.username`) |
 
 To map stored POSIX attributes into outbound JWT access tokens for internal services,
 see [POSIX token claims](POSIX-Token-Claims.md).

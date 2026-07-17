@@ -70,16 +70,21 @@ package org.opencadc.keycloak.posix.rest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.opencadc.keycloak.posix.PosixConfig;
+import org.opencadc.keycloak.posix.PosixIssPrefixConfigResolver;
 
 public class KeycloakPropertiesTest {
 
     private static final String SAMPLE_RESOURCE = "/keycloak.properties";
     private static final String UMS_SPI_PREFIX = "spi-realm-restapi-extension-posix-";
+    private static final String LISTENER_SPI_PREFIX = "spi-events-listener--opencadc-posix--";
 
     @Test
     public void testSampleKeycloakPropertiesConfigureUms() throws IOException {
@@ -97,6 +102,23 @@ public class KeycloakPropertiesTest {
         Assert.assertTrue(capabilities.contains("http://localhost:8080/ums/capabilities</accessURL>"));
         Assert.assertTrue(capabilities.contains(
                 "http://localhost:8080/ums/realms/master/posix/uid</accessURL>"));
+    }
+
+    @Test
+    public void testSampleKeycloakPropertiesConfigureEventListenerIssPrefixes() throws IOException {
+        Properties properties = loadSampleProperties();
+
+        String issPrefixes = properties.getProperty(LISTENER_SPI_PREFIX + "posix-username-iss-prefixes");
+        Assert.assertNotNull("sample keycloak.conf must define iss-prefixes with dashed property name", issPrefixes);
+
+        Map<String, String> values = new HashMap<>();
+        values.put(PosixConfig.ISS_PREFIXES, issPrefixes);
+        PosixConfig config = PosixConfig.fromMap(values);
+        Assert.assertEquals("ska",
+                config.getIssuerUsernamePrefix("https://ska-iam.stfc.ac.uk/").orElse(null));
+
+        Assert.assertEquals(PosixIssPrefixConfigResolver.KEYCLOAK_CONF_ISS_PREFIXES,
+                LISTENER_SPI_PREFIX + "posix-username-iss-prefixes");
     }
 
     private static Properties loadSampleProperties() throws IOException {

@@ -67,7 +67,12 @@
 
 package org.opencadc.keycloak.posix;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.keycloak.models.UserModel;
 
 /**
@@ -81,6 +86,7 @@ public class PosixConfig {
     public static final String USERNAME_TEMPLATE = "posix.username.template";
     public static final String HOME_TEMPLATE = "posix.home.template";
     public static final String LOGIN_SHELL = "posix.login.shell";
+    public static final String ISS_PREFIXES = "posix.username.iss-prefixes";
 
     public static final String DEFAULT_USERS_HOME = "/home";
     public static final String DEFAULT_USERNAME_TEMPLATE = "{uid}";
@@ -96,9 +102,10 @@ public class PosixConfig {
     private final String homeTemplate;
     private final String loginShell;
     private final int maxRetries;
+    private final Map<String, String> issuerUsernamePrefixes;
 
     public PosixConfig(int uidMin, int uidMax, String usersHome, String usernameTemplate, String homeTemplate,
-            String loginShell, int maxRetries) {
+            String loginShell, int maxRetries, Map<String, String> issuerUsernamePrefixes) {
         if (usersHome == null) {
             throw new IllegalArgumentException("usersHome is null");
         }
@@ -127,6 +134,9 @@ public class PosixConfig {
         this.homeTemplate = homeTemplate;
         this.loginShell = loginShell;
         this.maxRetries = maxRetries;
+        this.issuerUsernamePrefixes = issuerUsernamePrefixes == null
+                ? Collections.emptyMap()
+                : Collections.unmodifiableMap(issuerUsernamePrefixes);
     }
 
     public static PosixConfig fromMap(Map<String, String> config) {
@@ -137,8 +147,14 @@ public class PosixConfig {
         String usernameTemplate = getConfigValue(config, USERNAME_TEMPLATE, DEFAULT_USERNAME_TEMPLATE);
         String homeTemplate = getConfigValue(config, HOME_TEMPLATE, DEFAULT_HOME_TEMPLATE);
         String loginShell = getConfigValue(config, LOGIN_SHELL, DEFAULT_LOGIN_SHELL);
+        Map<String, String> issuerPrefixes = parseIssuerPrefixes(getConfigValue(config, ISS_PREFIXES, null));
         return new PosixConfig(uidMin, uidMax, usersHome, usernameTemplate, homeTemplate, loginShell,
-                DEFAULT_MAX_RETRIES);
+                DEFAULT_MAX_RETRIES, issuerPrefixes);
+    }
+
+    public PosixConfig withIssuerUsernamePrefixes(Map<String, String> issuerPrefixes) {
+        return new PosixConfig(uidMin, uidMax, usersHome, usernameTemplate, homeTemplate, loginShell, maxRetries,
+                issuerPrefixes);
     }
 
     public int getUidMin() {
@@ -167,6 +183,97 @@ public class PosixConfig {
 
     public int getMaxRetries() {
         return maxRetries;
+    }
+
+    public Optional<String> getIssuerUsernamePrefix(String issuer) {
+        if (issuer == null || issuerUsernamePrefixes.isEmpty()) {
+            return Optional.empty();
+        }
+        String prefix = issuerUsernamePrefixes.get(normalizeIssuer(issuer));
+        if (prefix == null || prefix.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(prefix);
+    }
+
+    public Set<String> getReservedUsernamePrefixes() {
+        return Collections.unmodifiableSet(new HashSet<>(issuerUsernamePrefixes.values()));
+    }
+
+    public boolean isReservedPrefixUsername(String username) {
+        if (username == null || issuerUsernamePrefixes.isEmpty()) {
+            return false;
+        }
+        String trimmed = username.trim();
+        for (String prefix : issuerUsernamePrefixes.values()) {
+            if (trimmed.startsWith(prefix + "-")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static String normalizeIssuer(String issuer) {
+        if (issuer == null) {
+            return "";
+        }
+        String trimmed = issuer.trim();
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+        return trimmed.endsWith("/") ? trimmed : trimmed + "/";
+    }
+
+    public static String applyIdpUsernamePrefix(String prefix, String baseUsername) {
+        if (prefix == null || prefix.trim().isEmpty()) {
+            throw new PosixAllocationException("POSIX username prefix is null or empty");
+        }
+        if (baseUsername == null || baseUsername.trim().isEmpty()) {
+            throw new PosixAllocationException("POSIX username base is null or empty");
+        }
+        String normalizedPrefix = prefix.trim();
+        String normalizedBase = baseUsername.trim();
+        String marker = normalizedPrefix + "-";
+        String result = normalizedBase.startsWith(marker) ? normalizedBase : marker + normalizedBase;
+        if (!PosixUsernameRules.isValid(result)) {
+            throw new PosixAllocationException("Invalid POSIX username after IdP prefix: " + result);
+        }
+        return result;
+    }
+
+    static Map<String, String> parseIssuerPrefixes(String raw) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> parsed = new LinkedHashMap<>();
+        Set<String> prefixesSeen = new HashSet<>();
+        for (String pair : raw.split(",")) {
+            String trimmedPair = pair.trim();
+            if (trimmedPair.isEmpty()) {
+                continue;
+            }
+            int separator = trimmedPair.lastIndexOf(':');
+            if (separator <= 0 || separator == trimmedPair.length() - 1) {
+                throw new IllegalArgumentException("Malformed iss-prefix pair: " + trimmedPair);
+            }
+            String issuer = normalizeIssuer(trimmedPair.substring(0, separator).trim());
+            String prefix = trimmedPair.substring(separator + 1).trim();
+            if (issuer.isEmpty()) {
+                throw new IllegalArgumentException("Issuer is empty in iss-prefix pair: " + trimmedPair);
+            }
+            if (!PosixUsernameRules.isValid(prefix)) {
+                throw new IllegalArgumentException("Invalid prefix for issuer " + issuer + ": " + prefix);
+            }
+            if (parsed.containsKey(issuer)) {
+                throw new IllegalArgumentException("Duplicate issuer: " + issuer);
+            }
+            if (prefixesSeen.contains(prefix)) {
+                throw new IllegalArgumentException("Duplicate prefix: " + prefix);
+            }
+            parsed.put(issuer, prefix);
+            prefixesSeen.add(prefix);
+        }
+        return Collections.unmodifiableMap(parsed);
     }
 
     public static String resolvePosixUsername(UserModel user, PosixConfig config, int uid) {

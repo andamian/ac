@@ -72,7 +72,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
-import java.util.Map;
 
 /**
  * Factory for the OpenCADC UMS REST endpoints.
@@ -90,36 +89,8 @@ public class PosixUmsRealmResourceProviderFactory implements RealmResourceProvid
 
     @Override
     public void init(Config.Scope config) {
-        // #region agent log
-        Map<String, Object> data = new java.util.LinkedHashMap<>();
-        data.put("scopePublicBaseUrl", config.get(PosixUmsConfig.PUBLIC_BASE_URL));
-        data.put("scopeRealm", config.get(PosixUmsConfig.REALM));
-        data.put("scopeUidAccessUrl", config.get(PosixUmsConfig.UID_ACCESS_URL));
-        data.put("scopePropertyNames", PosixUmsDebugLog.summarizePropertyNames(config.getPropertyNames()));
-        PosixUmsDebugLog.log("H4", "PosixUmsRealmResourceProviderFactory.init",
-                "factory init scope values", data);
-        // #endregion
-        try {
-            this.config = PosixUmsConfig.fromScope(config);
-            PosixUmsRuntimeConfig.set(this.config);
-            // #region agent log
-            Map<String, Object> ok = new java.util.LinkedHashMap<>();
-            ok.put("publicBaseUrl", this.config.getPublicBaseUrl());
-            ok.put("uidAccessUrl", this.config.getUidAccessUrl());
-            PosixUmsDebugLog.log("H4", "PosixUmsRealmResourceProviderFactory.init",
-                    "factory init succeeded", ok);
-            // #endregion
-        } catch (RuntimeException ex) {
-            // #region agent log
-            Map<String, Object> err = new java.util.LinkedHashMap<>();
-            err.put("error", ex.getMessage());
-            err.put("scopePublicBaseUrl", config.get(PosixUmsConfig.PUBLIC_BASE_URL));
-            err.put("scopePropertyNames", PosixUmsDebugLog.summarizePropertyNames(config.getPropertyNames()));
-            PosixUmsDebugLog.log("H1", "PosixUmsRealmResourceProviderFactory.init",
-                    "factory init failed", err);
-            // #endregion
-            throw ex;
-        }
+        this.config = PosixUmsConfig.fromScope(config);
+        PosixUmsRuntimeConfig.set(this.config);
     }
 
     @Override

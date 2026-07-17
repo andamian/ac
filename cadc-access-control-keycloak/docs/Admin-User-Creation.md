@@ -20,7 +20,7 @@ When POSIX details are provisioned, `posix.username` is resolved as follows:
 
 ## Validation
 
-The extension automatically attaches two validators to the **username** attribute
+The extension automatically attaches three validators to the **username** attribute
 when a username is first chosen via the Admin Console, self-registration, or SCIM
 (Identity Provider first-login review and login-time profile verification are excluded):
 
@@ -28,6 +28,7 @@ when a username is first chosen via the Admin Console, self-registration, or SCI
 |--------------|---------|
 | `opencadc-posix-username-format` | Letters, digits, underscore, hyphen; no whitespace |
 | `opencadc-posix-username-unique` | Not already used as `posix.username` |
+| `opencadc-posix-username-reserved-prefix` | Not reserved for external IdP POSIX accounts (`{prefix}-*`) |
 
 No manual User Profile JSON editing is required. The extension registers
 `PosixUserProfileProviderFactory`, which extends Keycloak's declarative user
@@ -44,6 +45,7 @@ back.
 |-------------|---------|
 | `posix-username-invalid` | Username contains invalid characters or whitespace |
 | `posix-username-in-use` | Username is already assigned as `posix.username` |
+| `posix-username-reserved-prefix` | Username is reserved for external IdP POSIX accounts |
 
 Default English messages are bundled with the extension. To customize the text
 shown in the Admin Console, add realm message bundle entries, for example:
@@ -51,6 +53,7 @@ shown in the Admin Console, add realm message bundle entries, for example:
 ```properties
 posix-username-invalid=Username must contain only letters, digits, underscore, and hyphen (no spaces or other symbols).
 posix-username-in-use=POSIX username already in use. Choose a different username.
+posix-username-reserved-prefix=Username is reserved for external identity provider accounts.
 ```
 
 ### Optional manual configuration
@@ -60,7 +63,8 @@ on the `username` attribute. This is optional when the extension is deployed:
 
 ```json
 "opencadc-posix-username-format": {},
-"opencadc-posix-username-unique": {}
+"opencadc-posix-username-unique": {},
+"opencadc-posix-username-reserved-prefix": {}
 ```
 
 ## Example

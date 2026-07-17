@@ -22,6 +22,7 @@ import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileMetadata;
 import org.opencadc.keycloak.posix.validator.PosixUsernameFormatValidator;
+import org.opencadc.keycloak.posix.validator.PosixUsernameReservedPrefixValidator;
 import org.opencadc.keycloak.posix.validator.PosixUsernameUniqueValidator;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -38,6 +39,7 @@ public class PosixUserProfileSupportTest {
         List<AttributeValidatorMetadata> validators = metadata.getAttribute(UserModel.USERNAME).get(0).getValidators();
         assertTrue(containsValidator(validators, PosixUsernameFormatValidator.ID));
         assertTrue(containsValidator(validators, PosixUsernameUniqueValidator.ID));
+        assertTrue(containsValidator(validators, PosixUsernameReservedPrefixValidator.ID));
     }
 
     @Test

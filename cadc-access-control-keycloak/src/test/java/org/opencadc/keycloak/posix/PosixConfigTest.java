@@ -67,8 +67,12 @@
 
 package org.opencadc.keycloak.posix;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class PosixConfigTest {
 
@@ -132,5 +136,51 @@ public class PosixConfigTest {
         assertEquals(PosixConfig.DEFAULT_USERNAME_TEMPLATE, config.getUsernameTemplate());
         assertEquals(PosixConfig.DEFAULT_HOME_TEMPLATE, config.getHomeTemplate());
         assertEquals(PosixConfig.DEFAULT_LOGIN_SHELL, config.getLoginShell());
+        assertTrue(config.getReservedUsernamePrefixes().isEmpty());
+    }
+
+    @Test
+    public void testParseIssuerPrefixes() {
+        Map<String, String> values = new HashMap<>();
+        values.put(PosixConfig.ISS_PREFIXES,
+                "https://ska-iam.stfc.ac.uk/:ska,https://iam.indigo.example/:indigo");
+        PosixConfig config = PosixConfig.fromMap(values);
+
+        assertEquals("ska", config.getIssuerUsernamePrefix("https://ska-iam.stfc.ac.uk/").get());
+        assertEquals("ska", config.getIssuerUsernamePrefix("https://ska-iam.stfc.ac.uk").get());
+        assertEquals("indigo", config.getIssuerUsernamePrefix("https://iam.indigo.example/").get());
+        assertEquals(2, config.getReservedUsernamePrefixes().size());
+    }
+
+    @Test
+    public void testApplyIdpUsernamePrefix() {
+        assertEquals("ska-user", PosixConfig.applyIdpUsernamePrefix("ska", "user"));
+        assertEquals("ska-user", PosixConfig.applyIdpUsernamePrefix("ska", "ska-user"));
+    }
+
+    @Test(expected = PosixAllocationException.class)
+    public void testApplyIdpUsernamePrefixRejectsInvalidResult() {
+        PosixConfig.applyIdpUsernamePrefix("ska", "bad.user");
+    }
+
+    @Test
+    public void testReservedPrefixUsernameDetection() {
+        Map<String, String> values = new HashMap<>();
+        values.put(PosixConfig.ISS_PREFIXES, "https://ska-iam.stfc.ac.uk/:ska");
+        PosixConfig config = PosixConfig.fromMap(values);
+
+        assertTrue(config.isReservedPrefixUsername("ska-user"));
+        assertFalse(config.isReservedPrefixUsername("ska"));
+        assertFalse(config.isReservedPrefixUsername("jsmith"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParseIssuerPrefixesRejectsDuplicatePrefix() {
+        PosixConfig.parseIssuerPrefixes("https://one.example/:ska,https://two.example/:ska");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParseIssuerPrefixesRejectsMalformedPair() {
+        PosixConfig.parseIssuerPrefixes("https://one.example/");
     }
 }

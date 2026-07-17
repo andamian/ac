@@ -14,8 +14,10 @@
 
 package org.opencadc.keycloak.posix.userprofile;
 
+import org.keycloak.Config;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
 import org.keycloak.userprofile.UserProfileMetadata;
+import org.opencadc.keycloak.posix.PosixConfigBootstrap;
 
 /**
  * Extends the declarative user profile provider to enforce POSIX username rules
@@ -33,6 +35,12 @@ public class PosixUserProfileProviderFactory extends DeclarativeUserProfileProvi
     @Override
     public int order() {
         return PROVIDER_PRIORITY;
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+        super.init(config);
+        PosixConfigBootstrap.loadIssuerPrefixes(config);
     }
 
     @Override

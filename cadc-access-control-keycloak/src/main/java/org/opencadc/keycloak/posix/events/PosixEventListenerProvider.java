@@ -79,6 +79,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.opencadc.keycloak.posix.PosixAllocation;
 import org.opencadc.keycloak.posix.PosixAllocationException;
+import org.opencadc.keycloak.posix.PosixBrokerUsernamePrefix;
 import org.opencadc.keycloak.posix.PosixConfig;
 import org.opencadc.keycloak.posix.PosixDetails;
 import org.opencadc.keycloak.posix.PosixProvisioner;
@@ -154,10 +155,19 @@ public class PosixEventListenerProvider implements EventListenerProvider {
         }
 
         if (adminCreated) {
-            PosixUsernameValidation.requireValidAndAvailableKeycloakUsername(session, realm, user);
+            PosixUsernameValidation.requireValidAndAvailableKeycloakUsername(session, realm, user, config);
+        } else if (!PosixBrokerUsernamePrefix.hasBrokerLink(session, realm, user)) {
+            PosixUsernameValidation.requireNotReservedPrefixUsername(user.getUsername(), config);
         }
 
+        PosixBrokerUsernamePrefix.applyIfConfigured(session, realm, user, config, adminCreated);
+
         PosixDetails details = PosixAllocation.allocate(config, session, realm, user);
+        if (!adminCreated && !PosixBrokerUsernamePrefix.hasBrokerLink(session, realm, user)
+                && config.isReservedPrefixUsername(details.getUsername())) {
+            throw new PosixAllocationException(
+                    "POSIX username reserved for external IdP accounts: " + details.getUsername());
+        }
         if (PosixUsernameInUseChecks.isPosixUsernameInUse(session, realm, details.getUsername(), user.getId())) {
             throw new PosixAllocationException("POSIX username already in use: " + details.getUsername());
         }
